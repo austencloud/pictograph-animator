@@ -1,9 +1,31 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<script>
+			// Initialize theme from localStorage or system preference
+			(function () {
+				function getInitialTheme() {
+					const storedTheme = localStorage.getItem('theme');
+					if (storedTheme) {
+						return storedTheme;
+					}
+
+					// Check system preference
+					if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+						return 'dark';
+					}
+
+					// Default to light theme
+					return 'light';
+				}
+
+				// Set the theme on the html element
+				document.documentElement.setAttribute('data-theme', getInitialTheme());
+			})();
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

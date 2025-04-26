@@ -20,16 +20,24 @@
 	let canRender = false;
 	let error = '';
 
+	// --- Variable for total beats ---
+	let totalBeats = 0;
+
+	// Continuous loop settings
+	let continuousLoop = false; // Whether to loop continuously without pausing
+	let canContinuousLoop = false; // Whether the sequence can be continuously looped
+
 	// Prop states
 	let bluePropState: PropState = {
 		centerPathAngle: 0,
 		staffRotationAngle: 0,
 		x: 0,
 		y: 0,
-		_stepStartStaffRotationAngle: 0,
-		_stepTargetStaffRotationAngle: 0,
-		_stepStartCenterPathAngle: 0,
-		_stepTargetCenterPathAngle: 0
+		_stepStartStaffRotationAngle: undefined, // Initialize as undefined
+		_stepTargetStaffRotationAngle: undefined,
+		_stepStartCenterPathAngle: undefined,
+		_stepTargetCenterPathAngle: undefined,
+		_initialized: undefined
 	};
 
 	let redPropState: PropState = {
@@ -37,10 +45,11 @@
 		staffRotationAngle: 0,
 		x: 0,
 		y: 0,
-		_stepStartStaffRotationAngle: 0,
-		_stepTargetStaffRotationAngle: 0,
-		_stepStartCenterPathAngle: 0,
-		_stepTargetCenterPathAngle: 0
+		_stepStartStaffRotationAngle: undefined, // Initialize as undefined
+		_stepTargetStaffRotationAngle: undefined,
+		_stepStartCenterPathAngle: undefined,
+		_stepTargetCenterPathAngle: undefined,
+		_initialized: undefined
 	};
 
 	// Parsed sequence
@@ -54,6 +63,9 @@
 		// Parse sequence data
 		if (sequenceData) {
 			parseSequence();
+		} else {
+			// Handle case where no initial sequenceData is provided
+			error = 'No sequence data provided on mount.';
 		}
 
 		return () => {
@@ -66,7 +78,14 @@
 
 	// Watch for changes in sequenceData
 	$: if (sequenceData) {
+		console.log('Sequence data changed, re-parsing and resetting...');
 		parseSequence();
+		resetAnimationState(); // Reset when data changes
+	} else {
+		// Clear state if sequenceData becomes null/undefined
+		parsedSteps = [];
+		totalBeats = 0;
+		error = 'Sequence data is missing.';
 		resetAnimationState();
 	}
 
@@ -74,120 +93,182 @@
 	 * Parses the sequence data into a more usable format
 	 */
 	function parseSequence() {
+		console.log('Parsing sequence data...');
+		error = ''; // Clear previous errors
 		if (!sequenceData) {
 			error = 'No sequence data provided';
+			parsedSteps = [];
+			totalBeats = 0;
+			console.error(error);
 			return;
 		}
 
-		if (sequenceData.length < 2) {
+		// Expecting [metadata, start_pos, step1, step2, ...]
+		if (!Array.isArray(sequenceData) || sequenceData.length < 2) {
 			error =
-				'Invalid sequence data: Sequence has no steps. This may be due to using a placeholder or an invalid sequence.';
+				'Invalid sequence data format: Expected an array with metadata and at least a start position.';
+			parsedSteps = [];
+			totalBeats = 0;
+			console.error(error, sequenceData);
 			return;
 		}
 
-		// First element is metadata, rest are steps
-		const steps = sequenceData.slice(1) as SequenceStep[];
+		// Actual animation steps start from index 2
+		const steps = sequenceData.slice(2) as SequenceStep[];
 
-		parsedSteps = steps.map((step) => {
-			// Pre-calculate angles and other values for faster animation
-			return {
-				...step
-				// Add any pre-calculated values here if needed
-			};
-		});
+		if (steps.length === 0) {
+			// Check if there are actual steps after metadata and start_pos
+			error = 'Invalid sequence: Contains metadata and start position, but no animation steps.';
+			parsedSteps = [];
+			totalBeats = 0;
+			console.warn(error, sequenceData);
+			// Don't return here, allow resetAnimationState to potentially clear the canvas
+		} else {
+			parsedSteps = steps.map((step) => ({ ...step }));
+			// --- Calculate totalBeats from parsedSteps ---
+			totalBeats = parsedSteps.length;
+			console.log(`Sequence parsed. Total beats: ${totalBeats}`);
 
-		// Calculate initial state
-		AnimationEngine.calculateState(0, parsedSteps, bluePropState, redPropState);
+			// Check if the sequence can be continuously looped
+			checkContinuousLoopability();
+		}
+
+		// Calculate initial state (safe even if totalBeats is 0)
+		// Pass totalBeats here for the initial calculation as well
+		AnimationEngine.calculateState(0, parsedSteps, bluePropState, redPropState, totalBeats);
 	}
 
 	/**
 	 * Main animation loop
 	 */
 	function animationLoop(timestamp: number) {
-		if (!isPlaying) return;
+		if (!isPlaying || totalBeats === 0) return; // Don't run if paused or no beats
 
 		// Calculate time delta and update current beat
 		if (lastTimestamp === null) {
 			lastTimestamp = timestamp;
 		}
-
 		const deltaTime = timestamp - lastTimestamp;
 		lastTimestamp = timestamp;
 
-		// Update current beat based on speed
 		const previousBeat = currentBeat;
+		const timePerBeat = 1000 / speed;
 
-		// Calculate the time to advance
+		// Advance beat incrementally
 		let deltaTimeRemaining = deltaTime;
-		const timePerBeat = 1000 / speed; // Time in ms for one beat at current speed
-
-		// Advance the beat in smaller increments to avoid skipping steps
 		while (deltaTimeRemaining > 0) {
-			// Calculate how much to advance this iteration (max 1/4 of a beat)
-			const maxAdvance = Math.min(timePerBeat / 4, deltaTimeRemaining);
-			currentBeat += (maxAdvance / 1000) * speed;
-			deltaTimeRemaining -= maxAdvance;
+			// Ensure we don't advance beyond totalBeats in one go if deltaTime is large
+			const timeToAdvance = Math.min(deltaTimeRemaining, timePerBeat / 4); // Advance max 1/4 beat time
+			const beatAdvance = (timeToAdvance / 1000) * speed;
 
-			// If we've reached the end of the sequence, stop advancing
-			if (currentBeat >= parsedSteps.length) {
-				break;
+			// Check if adding beatAdvance would exceed totalBeats
+			if (currentBeat + beatAdvance >= totalBeats) {
+				currentBeat = totalBeats;
+				deltaTimeRemaining = 0; // Stop advancing
+			} else {
+				currentBeat += beatAdvance;
+				deltaTimeRemaining -= timeToAdvance;
 			}
 		}
 
-		// Check if we've reached the end of the sequence
-		if (currentBeat >= parsedSteps.length) {
-			// Loop back to the beginning
-			currentBeat = 0;
-			lastTimestamp = null;
+		// --- Check against totalBeats ---
+		if (currentBeat >= totalBeats) {
+			currentBeat = totalBeats; // Ensure it's exactly totalBeats
 
-			// Reset prop states for the new loop
-			bluePropState._stepStartCenterPathAngle = undefined;
-			bluePropState._stepTargetCenterPathAngle = undefined;
-			bluePropState._stepStartStaffRotationAngle = undefined;
-			bluePropState._stepTargetStaffRotationAngle = undefined;
+			// Save the final angles for both props
+			const finalBlueCenterAngle = bluePropState.centerPathAngle;
+			const finalBlueStaffAngle = bluePropState.staffRotationAngle;
+			const finalRedCenterAngle = redPropState.centerPathAngle;
+			const finalRedStaffAngle = redPropState.staffRotationAngle;
 
-			redPropState._stepStartCenterPathAngle = undefined;
-			redPropState._stepTargetCenterPathAngle = undefined;
-			redPropState._stepStartStaffRotationAngle = undefined;
-			redPropState._stepTargetStaffRotationAngle = undefined;
-		}
+			// Check if we should use continuous looping
+			if (continuousLoop && canContinuousLoop) {
+				// For continuous looping, immediately reset to beat 0 and continue
+				console.log('Continuous loop: immediately resetting to beat 0');
+				currentBeat = 0;
+				lastTimestamp = null; // Reset timestamp for accurate timing
 
-		// Check if we've crossed a beat boundary
-		const previousStepIndex = Math.floor(previousBeat);
-		const currentStepIndex = Math.floor(currentBeat);
+				// Preserve the final angles
+				bluePropState.centerPathAngle = finalBlueCenterAngle;
+				bluePropState.staffRotationAngle = finalBlueStaffAngle;
+				redPropState.centerPathAngle = finalRedCenterAngle;
+				redPropState.staffRotationAngle = finalRedStaffAngle;
 
-		if (currentStepIndex > previousStepIndex) {
-			// We've crossed a beat boundary
-			// The AnimationEngine will handle maintaining continuity between steps
-			// by using the end angles from the previous step as the start angles for the current step
-			// Uncomment for debugging if needed
-			// const prevStep = parsedSteps[previousStepIndex];
-			// const currentStep = parsedSteps[currentStepIndex];
-			// console.log(`Transitioning from step ${previousStepIndex} to step ${currentStepIndex}`);
-			// console.log(`Blue: ${prevStep.blue_attributes.end_loc} -> ${currentStep.blue_attributes.start_loc}`);
-			// console.log(`Red: ${prevStep.red_attributes.end_loc} -> ${currentStep.red_attributes.start_loc}`);
+				// No need to call play() since we're already in the animation loop
+			} else {
+				// Standard looping with pause
+				pause(); // Pause first
+
+				// Use a flag to prevent multiple loop timeouts if reset is called quickly
+				if (!propState._isLooping) {
+					propState._isLooping = true; // Set flag
+					setTimeout(() => {
+						// Check if still at the end and flag is set
+						if (currentBeat === totalBeats && propState._isLooping) {
+							propState._isLooping = false; // Reset flag
+							currentBeat = 0;
+							lastTimestamp = null; // Reset timestamp for loop
+
+							// --- Crucial: Reset the initialized flag for BOTH props ---
+							// This forces the engine to use the JSON start_loc/ori for the first step again
+							// NO! This is wrong for looping. We WANT to preserve the end state.
+							// bluePropState._initialized = undefined;
+							// redPropState._initialized = undefined;
+
+							// --- Instead, preserve the final angles ---
+							bluePropState.centerPathAngle = finalBlueCenterAngle;
+							bluePropState.staffRotationAngle = finalBlueStaffAngle;
+							redPropState.centerPathAngle = finalRedCenterAngle;
+							redPropState.staffRotationAngle = finalRedStaffAngle;
+
+							// --- Ensure start angles for the first step are set correctly on loop ---
+							// The AnimationEngine's t=0 logic for initialized props handles this now.
+
+							play(); // Restart animation
+							console.log('Looping back to beginning with preserved angles');
+						} else {
+							propState._isLooping = false; // Reset flag if state changed
+						}
+					}, 1000); // Wait 1 second before looping
+				}
+			}
 		}
 
 		// Calculate prop states for the current beat
-		AnimationEngine.calculateState(currentBeat, parsedSteps, bluePropState, redPropState);
+		// --- Pass totalBeats to calculateState ---
+		AnimationEngine.calculateState(
+			currentBeat,
+			parsedSteps,
+			bluePropState,
+			redPropState,
+			totalBeats
+		);
 
-		// Render the current frame
+		// Render frame
 		if (canvasRenderer && canRender) {
 			canvasRenderer.render();
 		}
 
-		// Request next frame
-		animationFrameId = requestAnimationFrame(animationLoop);
+		// Request next frame only if still playing
+		if (isPlaying) {
+			animationFrameId = requestAnimationFrame(animationLoop);
+		}
 	}
 
 	/**
 	 * Starts the animation
 	 */
 	function play() {
-		if (isPlaying) return;
-
+		if (isPlaying || totalBeats === 0) return; // Don't play if already playing or no beats
+		console.log('Play triggered');
 		isPlaying = true;
-		lastTimestamp = null;
+		lastTimestamp = null; // Reset timestamp for accurate delta on first frame
+		// Clear any pending loop timeout
+		if (propState._isLooping) {
+			// This check might need a different approach if setTimeout ID isn't stored
+			console.log('Clearing potential loop timeout on play');
+			propState._isLooping = false;
+		}
 		animationFrameId = requestAnimationFrame(animationLoop);
 	}
 
@@ -195,35 +276,74 @@
 	 * Pauses the animation
 	 */
 	function pause() {
+		if (!isPlaying) return;
+		console.log('Pause triggered');
 		isPlaying = false;
-
 		if (animationFrameId !== null) {
 			cancelAnimationFrame(animationFrameId);
 			animationFrameId = null;
 		}
+		// Also clear the looping flag if paused manually during the timeout
+		propState._isLooping = false;
 	}
 
 	/**
 	 * Stops the animation and resets to the beginning
 	 */
 	function reset() {
-		pause();
+		console.log('Reset triggered');
+		pause(); // Ensure animation is stopped
 		resetAnimationState();
 	}
+
+	// Internal state object to hold looping flag
+	let propState = { _isLooping: false };
 
 	/**
 	 * Resets the animation state to the beginning
 	 */
 	function resetAnimationState() {
+		console.log('Resetting animation state...');
 		currentBeat = 0;
 		lastTimestamp = null;
+		propState._isLooping = false; // Ensure looping flag is reset
 
-		// Calculate initial state
-		AnimationEngine.calculateState(0, parsedSteps, bluePropState, redPropState);
+		// --- Crucial: Reset the initialized flag for BOTH props on explicit reset ---
+		// This forces the engine to use the JSON start_loc/ori for the first step again.
+		bluePropState._initialized = undefined;
+		redPropState._initialized = undefined;
 
-		// Render the initial state
+		// Clear internal step angles as well
+		bluePropState._stepStartCenterPathAngle = undefined;
+		bluePropState._stepTargetCenterPathAngle = undefined;
+		bluePropState._stepStartStaffRotationAngle = undefined;
+		bluePropState._stepTargetStaffRotationAngle = undefined;
+
+		redPropState._stepStartCenterPathAngle = undefined;
+		redPropState._stepTargetCenterPathAngle = undefined;
+		redPropState._stepStartStaffRotationAngle = undefined;
+		redPropState._stepTargetStaffRotationAngle = undefined;
+
+		// Calculate initial state using beat 0
+		// Pass totalBeats here
+		AnimationEngine.calculateState(0, parsedSteps, bluePropState, redPropState, totalBeats);
+		console.log('Initial state calculated after reset:', {
+			blue: { ...bluePropState },
+			red: { ...redPropState }
+		});
+
+		// Render initial state if possible
+		// Use a slight delay to ensure the engine calculation completes? Maybe not needed.
 		if (canvasRenderer && canRender) {
+			console.log('Rendering initial state after reset');
 			canvasRenderer.render();
+		} else {
+			console.log(
+				'Cannot render initial state - canvasRenderer:',
+				!!canvasRenderer,
+				'canRender:',
+				canRender
+			);
 		}
 	}
 
@@ -235,10 +355,57 @@
 	}
 
 	/**
+	 * Checks if the sequence can be continuously looped
+	 * A sequence can be continuously looped if the final position and orientation
+	 * of both props match their initial position and orientation
+	 */
+	function checkContinuousLoopability() {
+		if (parsedSteps.length < 2) {
+			canContinuousLoop = false;
+			return;
+		}
+
+		// Get the first and last steps
+		const firstStep = parsedSteps[0];
+		const lastStep = parsedSteps[parsedSteps.length - 1];
+
+		// Check if the end position/orientation of the last step matches the start position/orientation of the first step
+		const blueMatches =
+			lastStep.blue_attributes.end_loc === firstStep.blue_attributes.start_loc &&
+			(!lastStep.blue_attributes.end_ori ||
+				!firstStep.blue_attributes.start_ori ||
+				lastStep.blue_attributes.end_ori === firstStep.blue_attributes.start_ori);
+
+		const redMatches =
+			lastStep.red_attributes.end_loc === firstStep.red_attributes.start_loc &&
+			(!lastStep.red_attributes.end_ori ||
+				!firstStep.red_attributes.start_ori ||
+				lastStep.red_attributes.end_ori === firstStep.red_attributes.start_ori);
+
+		canContinuousLoop = blueMatches && redMatches;
+		console.log(`Sequence can${canContinuousLoop ? '' : 'not'} be continuously looped`);
+
+		// If we can't continuously loop, make sure the option is disabled
+		if (!canContinuousLoop) {
+			continuousLoop = false;
+		}
+	}
+
+	/**
+	 * Handles the continuous loop toggle change
+	 */
+	function handleContinuousLoopChange(enabled: boolean) {
+		continuousLoop = enabled;
+		console.log(`Continuous loop ${enabled ? 'enabled' : 'disabled'}`);
+	}
+
+	/**
 	 * Handles the imagesLoaded event from the CanvasRenderer
 	 */
 	function handleImagesLoaded() {
+		console.log('Images loaded, setting canRender=true');
 		canRender = true;
+		// Re-calculate and render initial state now that we can render
 		resetAnimationState();
 	}
 
@@ -247,14 +414,32 @@
 	 */
 	function handleError(event: CustomEvent) {
 		error = event.detail.message;
+		canRender = false; // Prevent rendering if images failed
+		console.error('Canvas Renderer Error:', error);
 	}
 
 	// Clean up on component destruction
 	onDestroy(() => {
+		console.log('SequenceAnimator destroyed, cancelling animation frame');
 		if (animationFrameId !== null) {
 			cancelAnimationFrame(animationFrameId);
 		}
+		// Clear any potential looping timeout
+		propState._isLooping = false; // Might need to store and clear timeout ID
 	});
+
+	// Reactive calculations using totalBeats
+	$: displayedBeat =
+		isPlaying || currentBeat > 0 ? Math.min(Math.floor(currentBeat) + 1, totalBeats) : 0;
+	$: currentStepIndex = totalBeats > 0 ? Math.min(Math.floor(currentBeat), totalBeats - 1) : 0;
+	$: currentStep =
+		totalBeats > 0 && parsedSteps.length > currentStepIndex
+			? parsedSteps[currentStepIndex]
+			: undefined;
+	$: progressPercent =
+		totalBeats > 0 && (isPlaying || currentBeat > 0)
+			? Math.min(100, (currentBeat / totalBeats) * 100)
+			: 0;
 </script>
 
 <div class="sequence-animator {isPlaying ? 'playing' : ''}">
@@ -268,75 +453,6 @@
 			on:imagesLoaded={handleImagesLoaded}
 			on:error={handleError}
 		/>
-
-		<div class="beat-info-panel">
-			<h3>Animation Info</h3>
-			<div class="info-row">
-				<span class="info-label">Current Beat:</span>
-				<span class="info-value">{Math.floor(currentBeat) + 1}</span>
-			</div>
-			<div class="info-row">
-				<span class="info-label">Total Beats:</span>
-				<span class="info-value">{parsedSteps.length}</span>
-			</div>
-			<div class="info-row">
-				<span class="info-label">Progress:</span>
-				<div class="progress-bar">
-					<div
-						class="progress-fill"
-						style="width: {Math.min(100, (currentBeat / parsedSteps.length) * 100)}%"
-					></div>
-				</div>
-			</div>
-
-			{#if parsedSteps.length > 0 && Math.floor(currentBeat) < parsedSteps.length}
-				<div class="step-details">
-					<h4>Current Step Details</h4>
-					<div class="info-row">
-						<span class="info-label">Letter:</span>
-						<span class="info-value">{parsedSteps[Math.floor(currentBeat)]?.letter || 'N/A'}</span>
-					</div>
-
-					<!-- Blue Prop Info -->
-					<div class="prop-info blue">
-						<h5>Blue Prop</h5>
-						<MotionCompass
-							startLocation={parsedSteps[Math.floor(currentBeat)]?.blue_attributes?.start_loc ||
-								'n'}
-							endLocation={parsedSteps[Math.floor(currentBeat)]?.blue_attributes?.end_loc || 'n'}
-							endOrientation={parsedSteps[Math.floor(currentBeat)]?.blue_attributes?.end_ori ||
-								'in'}
-							color="#2E3192"
-							propName="Blue"
-						/>
-						<div class="info-row">
-							<span class="info-label">Motion:</span>
-							<span class="info-value"
-								>{parsedSteps[Math.floor(currentBeat)]?.blue_attributes?.motion_type || 'N/A'}</span
-							>
-						</div>
-					</div>
-
-					<!-- Red Prop Info -->
-					<div class="prop-info red">
-						<h5>Red Prop</h5>
-						<MotionCompass
-							startLocation={parsedSteps[Math.floor(currentBeat)]?.red_attributes?.start_loc || 'n'}
-							endLocation={parsedSteps[Math.floor(currentBeat)]?.red_attributes?.end_loc || 'n'}
-							endOrientation={parsedSteps[Math.floor(currentBeat)]?.red_attributes?.end_ori || 'in'}
-							color="#ED1C24"
-							propName="Red"
-						/>
-						<div class="info-row">
-							<span class="info-label">Motion:</span>
-							<span class="info-value"
-								>{parsedSteps[Math.floor(currentBeat)]?.red_attributes?.motion_type || 'N/A'}</span
-							>
-						</div>
-					</div>
-				</div>
-			{/if}
-		</div>
 	</div>
 
 	{#if error}
@@ -346,10 +462,14 @@
 	<AnimationControls
 		{isPlaying}
 		{speed}
+		{continuousLoop}
+		{canContinuousLoop}
 		onPlay={play}
 		onPause={pause}
 		onReset={reset}
 		onSpeedChange={updateSpeed}
+		onContinuousLoopChange={handleContinuousLoopChange}
+		disabled={totalBeats === 0 || !!error}
 	/>
 </div>
 
@@ -358,124 +478,39 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 1rem;
+		gap: var(--spacing-lg);
 	}
 
 	.animation-container {
 		display: flex;
 		align-items: flex-start;
-		gap: 20px;
+		gap: var(--spacing-xl);
+		width: 100%;
+		justify-content: center;
+		flex-wrap: wrap;
 	}
-
-	.beat-info-panel {
-		width: 250px;
-		background-color: #f5f5f5;
-		border: 1px solid #ddd;
-		border-radius: 4px;
-		padding: 15px;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-	}
-
-	.beat-info-panel h3 {
-		margin-top: 0;
-		margin-bottom: 15px;
-		font-size: 18px;
-		color: #333;
-		border-bottom: 1px solid #ddd;
-		padding-bottom: 8px;
-	}
-
-	.info-row {
-		margin-bottom: 10px;
-		display: flex;
-		flex-direction: column;
-	}
-
-	.info-label {
-		font-weight: bold;
-		color: #555;
-		margin-bottom: 3px;
-	}
-
-	.info-value {
-		color: #333;
-		text-transform: uppercase;
-	}
-
-	.progress-bar {
-		height: 10px;
-		background-color: #e0e0e0;
-		border-radius: 5px;
-		overflow: hidden;
-		margin-top: 5px;
-	}
-
-	.progress-fill {
-		height: 100%;
-		background-color: #4caf50;
-		transition: width 0.2s ease-in-out;
-	}
-
-	.step-details {
-		margin-top: 15px;
-		border-top: 1px solid #ddd;
-		padding-top: 15px;
-	}
-
-	.step-details h4 {
-		margin-top: 0;
-		margin-bottom: 10px;
-		font-size: 16px;
-		color: #333;
-	}
-
-	.prop-info {
-		margin-top: 15px;
-		padding: 10px;
-		border-radius: 4px;
-		background-color: rgba(255, 255, 255, 0.7);
-	}
-
-	.prop-info h5 {
-		margin-top: 0;
-		margin-bottom: 8px;
-		font-size: 14px;
-	}
-
-	.prop-info.blue h5 {
-		color: #2e3192; /* HEX_BLUE */
-	}
-
-	.prop-info.red h5 {
-		color: #ed1c24; /* HEX_RED */
-	}
-
-	.prop-info.blue {
-		border-left: 4px solid #2e3192; /* HEX_BLUE */
-	}
-
-	.prop-info.red {
-		border-left: 4px solid #ed1c24; /* HEX_RED */
-	}
-
-	/* Styles for the MotionCompass are defined in the component */
 
 	.error-message {
-		color: red;
-		font-weight: bold;
-		margin-top: 1rem;
+		color: var(--error-color);
+		font-weight: 600;
+		margin-top: var(--spacing-md);
+		padding: var(--spacing-md);
+		background-color: var(--surface-color);
+		border: 1px solid var(--error-color);
+		border-radius: var(--border-radius-md);
+		text-align: center;
+		width: 100%;
+		max-width: 800px;
+		box-sizing: border-box;
+		box-shadow: var(--shadow-md);
+		border-left: 4px solid var(--error-color);
+		animation: fadeIn var(--transition-normal);
 	}
 
-	@media (max-width: 768px) {
+	@media (max-width: 900px) {
 		.animation-container {
 			flex-direction: column;
 			align-items: center;
-		}
-
-		.beat-info-panel {
-			width: 100%;
-			max-width: 600px;
-			margin-top: 15px;
 		}
 	}
 </style>

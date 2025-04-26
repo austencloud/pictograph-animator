@@ -171,11 +171,24 @@
 	.canvas-container {
 		position: relative;
 		display: inline-block;
+		border-radius: var(--border-radius-lg);
+		overflow: hidden;
+		box-shadow: var(--shadow-md);
+		transition: all var(--transition-normal);
+	}
+
+	.canvas-container:hover {
+		box-shadow: var(--shadow-lg);
+		transform: translateY(-2px);
 	}
 
 	canvas {
-		border: 1px solid #ccc;
-		background-color: #fff;
+		border: 1px solid var(--border-color);
+		background-color: var(--surface-color);
+		display: block;
+		transition:
+			background-color var(--transition-normal),
+			border-color var(--transition-normal);
 	}
 
 	.error-message {
@@ -183,10 +196,15 @@
 		top: 50%;
 		left: 50%;
 		transform: translate(-50%, -50%);
-		color: red;
-		font-weight: bold;
-		background-color: rgba(255, 255, 255, 0.8);
-		padding: 1rem;
-		border-radius: 4px;
+		color: var(--error-color);
+		font-weight: 600;
+		background-color: var(--surface-color);
+		padding: var(--spacing-md);
+		border-radius: var(--border-radius-md);
+		box-shadow: var(--shadow-md);
+		border-left: 4px solid var(--error-color);
+		max-width: 80%;
+		text-align: center;
+		animation: fadeIn var(--transition-normal);
 	}
 </style>

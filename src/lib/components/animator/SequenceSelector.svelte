@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getAllSequences } from '../../data/sequences/index.js';
+	import { getAllSequences } from '$lib/data/sequences/loader.js';
   import type { SequenceData } from '../../types/sequence.js';
   
   // Props
