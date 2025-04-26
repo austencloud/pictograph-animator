@@ -84,8 +84,19 @@ export class AnimationEngine {
 			// Set initial staff rotation angle based on start orientation or motion type
 			if (startOri) {
 				const oriAngle = mapOrientationToAngle(startOri);
-				propState._stepStartStaffRotationAngle =
-					oriAngle !== null ? oriAngle : propState._stepStartCenterPathAngle + PI; // Default to pointing toward center
+				if (oriAngle !== null) {
+					// Use the specific angle for cardinal directions
+					propState._stepStartStaffRotationAngle = oriAngle;
+				} else if (startOri.toLowerCase() === 'in') {
+					// 'in' means pointing toward the center
+					propState._stepStartStaffRotationAngle = propState._stepStartCenterPathAngle + PI;
+				} else if (startOri.toLowerCase() === 'out') {
+					// 'out' means pointing away from the center
+					propState._stepStartStaffRotationAngle = propState._stepStartCenterPathAngle;
+				} else {
+					// Default to pointing toward center
+					propState._stepStartStaffRotationAngle = propState._stepStartCenterPathAngle + PI;
+				}
 			} else if (motionType === 'pro') {
 				// Pro motion: staff points toward center
 				propState._stepStartStaffRotationAngle = propState._stepStartCenterPathAngle + PI;
@@ -103,8 +114,19 @@ export class AnimationEngine {
 			// Initialize staff rotation angle
 			if (startOri) {
 				const oriAngle = mapOrientationToAngle(startOri);
-				propState._stepStartStaffRotationAngle =
-					oriAngle !== null ? oriAngle : propState._stepStartCenterPathAngle + PI;
+				if (oriAngle !== null) {
+					// Use the specific angle for cardinal directions
+					propState._stepStartStaffRotationAngle = oriAngle;
+				} else if (startOri.toLowerCase() === 'in') {
+					// 'in' means pointing toward the center
+					propState._stepStartStaffRotationAngle = propState._stepStartCenterPathAngle + PI;
+				} else if (startOri.toLowerCase() === 'out') {
+					// 'out' means pointing away from the center
+					propState._stepStartStaffRotationAngle = propState._stepStartCenterPathAngle;
+				} else {
+					// Default to pointing toward center
+					propState._stepStartStaffRotationAngle = propState._stepStartCenterPathAngle + PI;
+				}
 			} else if (motionType === 'pro') {
 				propState._stepStartStaffRotationAngle = propState._stepStartCenterPathAngle + PI;
 			} else {
@@ -113,27 +135,20 @@ export class AnimationEngine {
 
 			propState.staffRotationAngle = propState._stepStartStaffRotationAngle;
 		} else if (t === 0) {
-			// For subsequent steps, verify that the start location matches the previous end location
+			// For subsequent steps, we should NOT reset the start angles
+			// Instead, we should use the end angles from the previous step
+			// This ensures continuity between steps
+
+			// Only log a warning if there's a discontinuity in the sequence data
 			if (prevAttributes && prevAttributes.end_loc !== startLoc) {
 				console.warn(
-					`Potential discontinuity: Previous step ends at ${prevAttributes.end_loc} but current step starts at ${startLoc}`
+					`Potential discontinuity in sequence data: Previous step ends at ${prevAttributes.end_loc} but current step starts at ${startLoc}`
 				);
-
-				// Even though there's a discontinuity, we should update the start angle to match the new start location
-				// This ensures that the animation doesn't jump when the sequence has discontinuities
-				propState._stepStartCenterPathAngle = mapPositionToAngle(startLoc);
-
-				// Update staff rotation angle based on the new start location and orientation
-				if (startOri) {
-					const oriAngle = mapOrientationToAngle(startOri);
-					propState._stepStartStaffRotationAngle =
-						oriAngle !== null ? oriAngle : propState._stepStartCenterPathAngle + PI;
-				} else if (motionType === 'pro') {
-					propState._stepStartStaffRotationAngle = propState._stepStartCenterPathAngle + PI;
-				} else {
-					propState._stepStartStaffRotationAngle = propState._stepStartCenterPathAngle;
-				}
 			}
+
+			// We don't need to update the start angles here because they were already set
+			// at the end of the previous step in the "if (t >= 0.99)" block below
+			// This is the key to maintaining continuity between steps
 		}
 
 		// Calculate target center path angle for this step
@@ -188,9 +203,16 @@ export class AnimationEngine {
 		);
 
 		// For the next step, the current end becomes the next start
-		if (t === 1.0) {
+		// We use t >= 0.99 instead of t === 1.0 to ensure we catch the end of the step
+		// even if t never exactly equals 1.0 due to floating-point precision
+		if (t >= 0.99) {
 			propState._stepStartCenterPathAngle = propState._stepTargetCenterPathAngle;
 			propState._stepStartStaffRotationAngle = propState._stepTargetStaffRotationAngle;
+
+			// Uncomment for debugging if needed
+			// console.log(`End of step reached. Setting start angles for next step.`);
+			// console.log(`Center path angle: ${propState._stepStartCenterPathAngle}`);
+			// console.log(`Staff rotation angle: ${propState._stepStartStaffRotationAngle}`);
 		}
 	}
 

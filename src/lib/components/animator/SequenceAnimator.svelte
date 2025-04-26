@@ -134,19 +134,15 @@
 		const currentStepIndex = Math.floor(currentBeat);
 
 		if (currentStepIndex > previousStepIndex) {
-			// We've crossed a beat boundary, so we need to update the start angles
-			// for the new step based on the end angles of the previous step
-			const prevStep = parsedSteps[previousStepIndex];
-			const currentStep = parsedSteps[currentStepIndex];
-
-			// Log for debugging
-			console.log(`Transitioning from step ${previousStepIndex} to step ${currentStepIndex}`);
-			console.log(
-				`Blue: ${prevStep.blue_attributes.end_loc} -> ${currentStep.blue_attributes.start_loc}`
-			);
-			console.log(
-				`Red: ${prevStep.red_attributes.end_loc} -> ${currentStep.red_attributes.start_loc}`
-			);
+			// We've crossed a beat boundary
+			// The AnimationEngine will handle maintaining continuity between steps
+			// by using the end angles from the previous step as the start angles for the current step
+			// Uncomment for debugging if needed
+			// const prevStep = parsedSteps[previousStepIndex];
+			// const currentStep = parsedSteps[currentStepIndex];
+			// console.log(`Transitioning from step ${previousStepIndex} to step ${currentStepIndex}`);
+			// console.log(`Blue: ${prevStep.blue_attributes.end_loc} -> ${currentStep.blue_attributes.start_loc}`);
+			// console.log(`Red: ${prevStep.red_attributes.end_loc} -> ${currentStep.red_attributes.start_loc}`);
 		}
 
 		// Calculate prop states for the current beat

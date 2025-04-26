@@ -1,15 +1,18 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import SequenceAnimator from '../lib/components/SequenceAnimator.svelte';
 	import type { SequenceData } from '../lib/types/sequence.js';
 	import {
 		aabbSequence,
 		complexSequence,
 		aSequence,
-		getSequenceById
+		getSequenceById,
+		initializeSequences
 	} from '../lib/data/sequences/index.js';
 
 	// Currently selected sequence
 	let selectedSequence: SequenceData = aabbSequence;
+	let isLoading = true;
 
 	// Function to switch between sequences
 	function selectSequence(id: string) {
@@ -27,69 +30,97 @@
 
 	// Show sequence data
 	let showSequenceData = false;
+
+	// Initialize sequences when the component mounts
+	onMount(async () => {
+		try {
+			await initializeSequences();
+			// Update the selected sequence after loading
+			selectedSequence = aabbSequence;
+			isLoading = false;
+		} catch (error) {
+			console.error('Failed to initialize sequences:', error);
+			isLoading = false;
+		}
+	});
 </script>
 
 <div class="container">
 	<h1>Sequence Animator</h1>
 
-	<div class="sequence-selector">
-		<button
-			class:active={selectedSequence === aabbSequence}
-			on:click={() => selectSequence('aabb')}
-		>
-			AABB Pattern
-		</button>
-		<button
-			class:active={selectedSequence === complexSequence}
-			on:click={() => selectSequence('complex')}
-		>
-			Complex Pattern
-		</button>
-		<button class:active={selectedSequence === aSequence} on:click={() => selectSequence('a')}>
-			A Pattern
-		</button>
-	</div>
-
-	<div class="animator-container">
-		<SequenceAnimator
-			sequenceData={selectedSequence}
-			width={canvasSize}
-			height={canvasSize}
-			speed={animationSpeed}
-		/>
-	</div>
-
-	<div class="settings">
-		<div class="setting">
-			<label for="canvas-size">Canvas Size: {canvasSize}px</label>
-			<input id="canvas-size" type="range" min="300" max="900" step="50" bind:value={canvasSize} />
+	{#if isLoading}
+		<div class="loading">
+			<p>Loading sequence data...</p>
 		</div>
-		<!-- Add speed control if needed -->
-		<!-- <div class="setting">
-			<label for="animation-speed">Animation Speed: {animationSpeed.toFixed(1)}x</label>
-			<input id="animation-speed" type="range" min="0.1" max="2.0" step="0.1" bind:value={animationSpeed} />
-		</div> -->
-	</div>
+	{:else}
+		<div class="sequence-selector">
+			<button
+				class:active={selectedSequence === aabbSequence}
+				on:click={() => selectSequence('aabb')}
+			>
+				AABB Pattern
+			</button>
 
-	<div class="sequence-info">
-		<h2>Current Sequence: {selectedSequence[0].word}</h2>
-		<p>Author: {selectedSequence[0].author || 'Unknown'}</p>
-		<p>Level: {selectedSequence[0].level || 'N/A'}</p>
-		<p>Steps: {selectedSequence.length - 1}</p>
-
-		<div class="data-toggle">
-			<label>
-				<input type="checkbox" bind:checked={showSequenceData} />
-				Show Sequence Data
-			</label>
 		</div>
-	</div>
+	{/if}
 
-	{#if showSequenceData}
-		<div class="sequence-data">
-			<h3>Sequence Data</h3>
-			<pre>{JSON.stringify(selectedSequence, null, 2)}</pre>
+	{#if !isLoading}
+		<div class="animator-container">
+			<SequenceAnimator
+				sequenceData={selectedSequence}
+				width={canvasSize}
+				height={canvasSize}
+				speed={animationSpeed}
+			/>
 		</div>
+	{/if}
+
+	{#if !isLoading}
+		<div class="settings">
+			<div class="setting">
+				<label for="canvas-size">Canvas Size: {canvasSize}px</label>
+				<input
+					id="canvas-size"
+					type="range"
+					min="300"
+					max="900"
+					step="50"
+					bind:value={canvasSize}
+				/>
+			</div>
+			<div class="setting">
+				<label for="animation-speed">Animation Speed: {animationSpeed.toFixed(1)}x</label>
+				<input
+					id="animation-speed"
+					type="range"
+					min="0.1"
+					max="2.0"
+					step="0.1"
+					bind:value={animationSpeed}
+				/>
+			</div>
+		</div>
+
+		<div class="sequence-info">
+			<h2>Current Sequence: {selectedSequence[0].word}</h2>
+			<p>Author: {selectedSequence[0].author || 'Unknown'}</p>
+			<p>Level: {selectedSequence[0].level || 'N/A'}</p>
+			<p>Steps: {selectedSequence.length - 1}</p>
+
+			<div class="data-toggle">
+				<label>
+					<input type="checkbox" bind:checked={showSequenceData} />
+					Show Sequence Data
+				</label>
+			</div>
+		</div>
+
+		{#if showSequenceData}
+			<div class="sequence-data">
+				<h3>Sequence Data</h3>
+				<pre>{JSON.stringify(selectedSequence, null, 2)}</pre>
+			</div>
+		{/if}
 	{/if}
 </div>
 
@@ -159,5 +190,14 @@
 		margin: 0;
 		white-space: pre-wrap;
 		font-size: 0.9rem;
+	}
+
+	.loading {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		height: 200px;
+		font-size: 1.2rem;
+		color: #666;
 	}
 </style>
