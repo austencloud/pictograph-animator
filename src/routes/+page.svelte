@@ -1,23 +1,26 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import SequenceAnimator from '../lib/components/animator/SequenceAnimator.svelte';
-	import type { SequenceData } from '../lib/types/sequence.js';
+	import SequenceGallery from '../lib/components/SequenceGallery.svelte';
+	import type { SequenceData } from '../lib/types/sequence';
 	import {
-		aabbSequence,
-		getSequenceById,
-		initializeSequences
-	} from '$lib/data/sequences/loader.js';
+		sequencesStore,
+		selectedSequenceStore,
+		sequencesActions,
+		sequencesLoaded
+	} from '$lib/stores/sequences';
 
-	// Currently selected sequence
-	let selectedSequence: SequenceData = aabbSequence;
-	let isLoading = true;
+	// Subscribe to the store values with reactive declarations
+	$: isLoading = $sequencesStore.isLoading;
+	$: error = $sequencesStore.error;
+	$: availableSequences = $sequencesStore.items;
+	$: selectedSequence = $selectedSequenceStore.data;
+	$: selectedSequenceId = $selectedSequenceStore.id;
+	$: isDataLoaded = $sequencesLoaded;
 
-	// Function to switch between sequences
-	function selectSequence(id: string) {
-		const sequence = getSequenceById(id);
-		if (sequence) {
-			selectedSequence = sequence;
-		}
+	// Function to handle sequence selection from gallery
+	function handleSelectSequence(event: CustomEvent<{ sequenceData: SequenceData; id: string }>) {
+		sequencesActions.selectSequence(event.detail.sequenceData, event.detail.id);
 	}
 
 	// Canvas size
@@ -31,16 +34,16 @@
 
 	// Initialize sequences when the component mounts
 	onMount(async () => {
-		try {
-			await initializeSequences();
-			// Update the selected sequence after loading
-			selectedSequence = aabbSequence;
-			isLoading = false;
-		} catch (error) {
-			console.error('Failed to initialize sequences:', error);
-			isLoading = false;
-		}
+		// Initialize the store - this handles all the loading logic internally
+		await sequencesActions.initializeStore();
 	});
+
+	// Function to retry loading if it fails
+	const retryLoading = (): void => {
+		sequencesActions.initializeStore().catch((err) => {
+			console.error('Retry failed:', err);
+		});
+	};
 </script>
 
 <div class="container">
@@ -54,20 +57,24 @@
 			<div class="loading-spinner"></div>
 			<p>Loading sequence data...</p>
 		</div>
-	{:else}
-		<div class="sequence-selector">
-			<button
-				class="sequence-button"
-				class:active={selectedSequence === aabbSequence}
-				on:click={() => selectSequence('aabb')}
-			>
-				<span class="button-icon">🔄</span>
-				<span>AABB Pattern</span>
-			</button>
+	{:else if error}
+		<div class="error-container">
+			<p class="error-message">{error}</p>
+			<button on:click={retryLoading} class="retry-button">Retry</button>
 		</div>
-	{/if}
+	{:else if !isDataLoaded}
+		<div class="empty-state">
+			<p>No sequences available</p>
+		</div>
+	{:else}
+		<!-- Sequence Gallery -->
+		<SequenceGallery
+			sequences={availableSequences}
+			{selectedSequenceId}
+			on:selectSequence={handleSelectSequence}
+		/>
 
-	{#if !isLoading}
+		<!-- Sequence Animator -->
 		<div class="animator-container">
 			<SequenceAnimator
 				sequenceData={selectedSequence}
@@ -182,43 +189,6 @@
 		height: 200px;
 		gap: var(--spacing-md);
 		color: var(--text-color-secondary);
-	}
-
-	.sequence-selector {
-		display: flex;
-		justify-content: center;
-		gap: var(--spacing-md);
-		margin-bottom: var(--spacing-xl);
-	}
-
-	.sequence-button {
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-sm);
-		padding: var(--spacing-sm) var(--spacing-lg);
-		background-color: var(--surface-color);
-		border: 1px solid var(--border-color);
-		border-radius: var(--border-radius-md);
-		color: var(--text-color);
-		font-weight: 500;
-		transition: all var(--transition-fast);
-		box-shadow: var(--shadow-sm);
-	}
-
-	.sequence-button:hover {
-		background-color: var(--surface-color-hover);
-		transform: translateY(-2px);
-		box-shadow: var(--shadow-md);
-	}
-
-	.sequence-button.active {
-		background-color: var(--primary-color);
-		color: white;
-		border-color: var(--primary-color);
-	}
-
-	.button-icon {
-		font-size: var(--font-size-lg);
 	}
 
 	.animator-container {
@@ -447,5 +417,43 @@
 		.subtitle {
 			font-size: var(--font-size-md);
 		}
+	}
+
+	.error-container {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		height: 200px;
+		gap: var(--spacing-md);
+	}
+
+	.error-message {
+		color: var(--error-color, #e53935);
+		font-weight: 500;
+	}
+
+	.retry-button {
+		padding: var(--spacing-sm) var(--spacing-md);
+		background: var(--primary-color);
+		color: white;
+		border: none;
+		border-radius: var(--border-radius-md);
+		font-weight: 500;
+		cursor: pointer;
+		transition: background-color var(--transition-fast);
+	}
+
+	.retry-button:hover {
+		background: var(--primary-color-hover);
+	}
+
+	.empty-state {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		height: 200px;
+		color: var(--text-color-secondary);
+		font-size: var(--font-size-lg);
 	}
 </style>

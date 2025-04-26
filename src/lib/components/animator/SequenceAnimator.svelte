@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import type { SequenceData, SequenceStep, PropState } from '../../types/sequence.js';
-	import { AnimationEngine } from './AnimationEngine.js';
+	import type { SequenceData, SequenceStep, PropState } from '../../types/sequence';
+	import { AnimationEngine } from './AnimationEngine';
 	import CanvasRenderer from './CanvasRenderer.svelte';
 	import AnimationControls from './AnimationControls.svelte';
-	import MotionCompass from './MotionCompass.svelte';
+	import { normalizeSequenceFormat } from '../../utils/sequenceFormatAdapter';
 
 	// Props
 	export let sequenceData: SequenceData;
@@ -95,6 +95,7 @@
 	function parseSequence() {
 		console.log('Parsing sequence data...');
 		error = ''; // Clear previous errors
+
 		if (!sequenceData) {
 			error = 'No sequence data provided';
 			parsedSteps = [];
@@ -103,25 +104,51 @@
 			return;
 		}
 
-		// Expecting [metadata, start_pos, step1, step2, ...]
-		if (!Array.isArray(sequenceData) || sequenceData.length < 2) {
-			error =
-				'Invalid sequence data format: Expected an array with metadata and at least a start position.';
+		// Log the actual data structure received
+		console.log('Raw sequence data format:', {
+			type: typeof sequenceData,
+			isArray: Array.isArray(sequenceData),
+			length: Array.isArray(sequenceData) ? sequenceData.length : 'N/A',
+			sample: JSON.stringify(sequenceData).substring(0, 100) + '...'
+		});
+
+		// Normalize the sequence data format
+		const normalizedData = normalizeSequenceFormat(sequenceData);
+
+		if (!normalizedData) {
+			error = 'Failed to normalize sequence data format';
 			parsedSteps = [];
 			totalBeats = 0;
 			console.error(error, sequenceData);
 			return;
 		}
 
+		// Use the normalized data for further processing
+		console.log('Normalized data format:', {
+			isArray: Array.isArray(normalizedData),
+			length: normalizedData.length,
+			firstElement: typeof normalizedData[0]
+		});
+
+		// Expecting [metadata, start_pos, step1, step2, ...]
+		if (!Array.isArray(normalizedData) || normalizedData.length < 2) {
+			error =
+				'Invalid sequence data format: Expected an array with metadata and at least a start position.';
+			parsedSteps = [];
+			totalBeats = 0;
+			console.error(error, normalizedData);
+			return;
+		}
+
 		// Actual animation steps start from index 2
-		const steps = sequenceData.slice(2) as SequenceStep[];
+		const steps = normalizedData.slice(2) as SequenceStep[];
 
 		if (steps.length === 0) {
 			// Check if there are actual steps after metadata and start_pos
 			error = 'Invalid sequence: Contains metadata and start position, but no animation steps.';
 			parsedSteps = [];
 			totalBeats = 0;
-			console.warn(error, sequenceData);
+			console.warn(error, normalizedData);
 			// Don't return here, allow resetAnimationState to potentially clear the canvas
 		} else {
 			parsedSteps = steps.map((step) => ({ ...step }));
@@ -365,28 +392,63 @@
 			return;
 		}
 
-		// Get the first and last steps
-		const firstStep = parsedSteps[0];
-		const lastStep = parsedSteps[parsedSteps.length - 1];
+		try {
+			// Get the first and last steps
+			const firstStep = parsedSteps[0] as any;
+			const lastStep = parsedSteps[parsedSteps.length - 1] as any;
 
-		// Check if the end position/orientation of the last step matches the start position/orientation of the first step
-		const blueMatches =
-			lastStep.blue_attributes.end_loc === firstStep.blue_attributes.start_loc &&
-			(!lastStep.blue_attributes.end_ori ||
-				!firstStep.blue_attributes.start_ori ||
-				lastStep.blue_attributes.end_ori === firstStep.blue_attributes.start_ori);
+			// Determine which format the sequence data is in
+			const isNewFormat = 'blue_prop' in firstStep && 'red_prop' in firstStep;
+			const isOldFormat = 'blue_attributes' in firstStep && 'red_attributes' in firstStep;
 
-		const redMatches =
-			lastStep.red_attributes.end_loc === firstStep.red_attributes.start_loc &&
-			(!lastStep.red_attributes.end_ori ||
-				!firstStep.red_attributes.start_ori ||
-				lastStep.red_attributes.end_ori === firstStep.red_attributes.start_ori);
+			if (!isNewFormat && !isOldFormat) {
+				console.warn('Unknown sequence data format for continuous loop check');
+				canContinuousLoop = false;
+				continuousLoop = false;
+				return;
+			}
 
-		canContinuousLoop = blueMatches && redMatches;
-		console.log(`Sequence can${canContinuousLoop ? '' : 'not'} be continuously looped`);
+			let blueMatches = false;
+			let redMatches = false;
 
-		// If we can't continuously loop, make sure the option is disabled
-		if (!canContinuousLoop) {
+			if (isNewFormat) {
+				// New format with blue_prop and red_prop
+				blueMatches =
+					lastStep.blue_prop.location === firstStep.blue_prop.location &&
+					(!lastStep.blue_prop.orientation ||
+						!firstStep.blue_prop.orientation ||
+						lastStep.blue_prop.orientation === firstStep.blue_prop.orientation);
+
+				redMatches =
+					lastStep.red_prop.location === firstStep.red_prop.location &&
+					(!lastStep.red_prop.orientation ||
+						!firstStep.red_prop.orientation ||
+						lastStep.red_prop.orientation === firstStep.red_prop.orientation);
+			} else {
+				// Old format with blue_attributes and red_attributes
+				blueMatches =
+					lastStep.blue_attributes.end_loc === firstStep.blue_attributes.start_loc &&
+					(!lastStep.blue_attributes.end_ori ||
+						!firstStep.blue_attributes.start_ori ||
+						lastStep.blue_attributes.end_ori === firstStep.blue_attributes.start_ori);
+
+				redMatches =
+					lastStep.red_attributes.end_loc === firstStep.red_attributes.start_loc &&
+					(!lastStep.red_attributes.end_ori ||
+						!firstStep.red_attributes.start_ori ||
+						lastStep.red_attributes.end_ori === firstStep.red_attributes.start_ori);
+			}
+
+			canContinuousLoop = blueMatches && redMatches;
+			console.log(`Sequence can${canContinuousLoop ? '' : 'not'} be continuously looped`);
+
+			// If we can't continuously loop, make sure the option is disabled
+			if (!canContinuousLoop) {
+				continuousLoop = false;
+			}
+		} catch (err) {
+			console.warn('Error checking continuous loopability:', err);
+			canContinuousLoop = false;
 			continuousLoop = false;
 		}
 	}

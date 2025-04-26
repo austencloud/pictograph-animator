@@ -24,14 +24,6 @@ export class AnimationEngine {
 	) {
 		if (parsedSteps.length === 0 || totalBeats === 0) return;
 
-		// Ensure props have been initialized at least once before proceeding
-		// This prevents calculations before resetAnimationState sets initial values
-		// if (!bluePropState._initialized || !redPropState._initialized) {
-		// 	// Allow calculation even if not initialized, calculatePropState handles init
-		// 	// console.log(`Skipping calculateState: Props not initialized (Beat: ${beat.toFixed(3)})`);
-		// 	// return;
-		// }
-
 		// Ensure beat doesn't exceed totalBeats for index calculation
 		const clampedBeat = Math.min(beat, totalBeats);
 
@@ -89,8 +81,15 @@ export class AnimationEngine {
 			beat // Pass beat for logging context
 		);
 
-		// --- Update step index after calculating ---
-		// Moved inside calculatePropState
+		// When we reach the end of a step, store the final angles for the next step
+		if (t >= 0.999) {
+			// Save end state of current step for smooth transitions
+			bluePropState._previousEndCenterPathAngle = bluePropState.centerPathAngle;
+			bluePropState._previousEndStaffRotationAngle = bluePropState.staffRotationAngle;
+			
+			redPropState._previousEndCenterPathAngle = redPropState.centerPathAngle;
+			redPropState._previousEndStaffRotationAngle = redPropState.staffRotationAngle;
+		}
 	}
 
 	/**
@@ -106,23 +105,59 @@ export class AnimationEngine {
 		previousStepIndex: number, // The step index from the *last* call to this function
 		beat: number // For logging
 	) {
-		// Determine which attributes to use (blue or red)
-		const attributes =
-			propName === 'Blue' ? currentStep.blue_attributes : currentStep.red_attributes;
-		const prevAttributes = prevStep
-			? propName === 'Blue'
-				? prevStep.blue_attributes
-				: prevStep.red_attributes
-			: null;
+		// Determine which format the data is in
+		// Use type assertion to avoid TypeScript errors
+		const currentStepAny = currentStep as any;
+		const isNewFormat = 'blue_prop' in currentStepAny && 'red_prop' in currentStepAny;
 
-		// Get attributes from the current step's data
-		const startLoc = attributes.start_loc;
-		const endLoc = attributes.end_loc;
-		const motionType = attributes.motion_type;
-		const rotDir = attributes.prop_rot_dir;
-		const turns = attributes.turns || 0;
-		const startOri = attributes.start_ori;
-		const endOri = attributes.end_ori;
+		// Get the appropriate prop data based on format
+		let attributes: PropAttributes;
+		let prevAttributes: PropAttributes | null = null;
+
+		if (isNewFormat) {
+			// New format with blue_prop and red_prop
+			attributes = propName === 'Blue' ? currentStepAny.blue_prop : currentStepAny.red_prop;
+			prevAttributes = prevStep
+				? propName === 'Blue'
+					? (prevStep as any).blue_prop
+					: (prevStep as any).red_prop
+				: null;
+		} else {
+			// Old format with blue_attributes and red_attributes
+			attributes = propName === 'Blue' ? currentStep.blue_attributes : currentStep.red_attributes;
+			prevAttributes = prevStep
+				? propName === 'Blue'
+					? prevStep.blue_attributes
+					: prevStep.red_attributes
+				: null;
+		}
+
+		if (!attributes) {
+			console.error(`${propName} prop attributes not found in step:`, currentStep);
+			return; // Skip this calculation if attributes are missing
+		}
+
+		// Get attributes from the current step's data, handling both formats
+		let startLoc, endLoc, motionType, propRotDir, turns, startOri, endOri;
+
+		if (isNewFormat) {
+			// New format mapping
+			startLoc = attributes.start_loc; // Use location as start_loc
+			endLoc = attributes.end_loc; // In new format, location is both start and end
+
+
+			startOri = attributes.start_ori;
+			endOri = attributes.end_ori;
+		} else {
+			// Original format
+			startLoc = attributes.start_loc;
+			endLoc = attributes.end_loc;
+			motionType = attributes.motion_type;
+			propRotDir = attributes.prop_rot_dir;
+			turns = attributes.turns || 0;
+			startOri = attributes.start_ori;
+			endOri = attributes.end_ori;
+		}
 
 		// --- Update PropState with Current Step Attributes ---
 		propState.current_start_loc = startLoc;
@@ -130,26 +165,20 @@ export class AnimationEngine {
 		propState.current_start_ori = startOri;
 		propState.current_end_ori = endOri;
 		propState.current_motion_type = motionType;
-		propState.current_prop_rot_dir = rotDir;
+		propState.current_prop_rot_dir = propRotDir;
 		propState.current_turns = turns;
-		// Optional: Store overall step info if needed later
-		// propState.current_letter = currentStep.letter;
-		// propState.current_start_pos = currentStep.start_pos;
-		// propState.current_end_pos = currentStep.end_pos;
-		// --- End Update ---
 
 		const isFirstStepOverall = currentStepIndex === 0;
 		// Detect if this is the *first frame* of a *new* step (either the very first step or a transition)
 		const isNewStepStart =
 			currentStepIndex !== previousStepIndex || (isFirstStepOverall && !propState._initialized);
-
+			
 		// STEP 1: Initialize or update the starting angles for this step
 		if (isNewStepStart) {
 			if (isFirstStepOverall && !propState._initialized) {
 				// --- Condition 1: First Render of First Step ---
-				// console.log(`${propName} - Condition 1: First Step Initialization (Beat ${beat.toFixed(3)})`);
 				propState._stepStartCenterPathAngle = mapPositionToAngle(startLoc);
-				// ... (rest of initialization logic as before) ...
+				
 				if (startOri) {
 					const oriAngle = mapOrientationToAngle(startOri);
 					if (oriAngle !== null) propState._stepStartStaffRotationAngle = oriAngle;
@@ -166,17 +195,21 @@ export class AnimationEngine {
 				propState.centerPathAngle = propState._stepStartCenterPathAngle;
 				propState.staffRotationAngle = propState._stepStartStaffRotationAngle;
 				propState._initialized = true;
+				
+				// Initialize previous end angles for first step
+				propState._previousEndCenterPathAngle = propState._stepStartCenterPathAngle;
+				propState._previousEndStaffRotationAngle = propState._stepStartStaffRotationAngle;
 			} else {
 				// --- Condition 2 or 3: Transition to a new step (or loop back) ---
-				// Capture the current angles (which *should* be the end state of the previous step)
-				// This now runs whenever the stepIndex changes, ensuring capture even if t isn't exactly 0.
-
-				// Special logging for Beat 2 transition (Step index 1)
-				const isTransitioningToBeat2 = currentStepIndex === 1 && previousStepIndex === 0;
-
-				// CRITICAL CAPTURE:
-				propState._stepStartCenterPathAngle = propState.centerPathAngle;
-				propState._stepStartStaffRotationAngle = propState.staffRotationAngle;
+				// Use the stored previous end angles for smooth transitions
+				if (propState._previousEndCenterPathAngle !== null && propState._previousEndStaffRotationAngle !== null) {
+					propState._stepStartCenterPathAngle = propState._previousEndCenterPathAngle;
+					propState._stepStartStaffRotationAngle = propState._previousEndStaffRotationAngle;
+				} else {
+					// Fallback if previous end angles aren't available (should rarely happen)
+					propState._stepStartCenterPathAngle = propState.centerPathAngle;
+					propState._stepStartStaffRotationAngle = propState.staffRotationAngle;
+				}
 
 				// Check for data discontinuity (optional, but good sanity check)
 				if (prevAttributes && prevAttributes.end_loc !== startLoc && !isFirstStepOverall) {
@@ -195,27 +228,34 @@ export class AnimationEngine {
 		propState._stepTargetCenterPathAngle = mapPositionToAngle(endLoc);
 		const currentTargetCenterAngle = propState._stepTargetCenterPathAngle;
 
+		// Calculate target staff rotation angle based on motion type
 		let calculatedTargetStaffAngle = currentStartStaffAngle;
+		
 		if (motionType === 'pro') {
-			// iso
+			// Pro-spin: staff always points to center (perpendicular to path)
 			calculatedTargetStaffAngle = currentTargetCenterAngle + PI;
 		} else if (motionType === 'anti') {
-			// anti
-			const rotationMultiplier = rotDir === 'cw' ? 1 : rotDir === 'ccw' ? -1 : 0;
-			const totalRotation = TWO_PI * turns * rotationMultiplier;
-			calculatedTargetStaffAngle = currentStartStaffAngle + totalRotation;
-		} else if (motionType === 'static' || motionType === 'dash') {
+			// Anti-spin: independent rotation based on turns and direction
+			const rotationDirMultiplier = propRotDir === 'cw' ? 1 : propRotDir === 'ccw' ? -1 : 0;
+			const totalRotationDelta = TWO_PI * (turns ?? 0) * rotationDirMultiplier;
+			calculatedTargetStaffAngle = currentStartStaffAngle + totalRotationDelta;
+		} else {
+			// Static/dash: maintain orientation unless end_ori specifies otherwise
 			calculatedTargetStaffAngle = currentStartStaffAngle;
 		}
-
+		
+		// Consider end_ori if specified (except for pro-spin which always points to center)
 		if (motionType !== 'pro' && endOri) {
 			const endOriAngle = mapOrientationToAngle(endOri);
-			if (endOriAngle !== null) calculatedTargetStaffAngle = endOriAngle;
-			else if (endOri.toLowerCase() === 'in')
+			if (endOriAngle !== null) {
+				calculatedTargetStaffAngle = endOriAngle;
+			} else if (endOri.toLowerCase() === 'in') {
 				calculatedTargetStaffAngle = currentTargetCenterAngle + PI;
-			else if (endOri.toLowerCase() === 'out')
+			} else if (endOri.toLowerCase() === 'out') {
 				calculatedTargetStaffAngle = currentTargetCenterAngle;
+			}
 		}
+		
 		propState._stepTargetStaffRotationAngle = calculatedTargetStaffAngle;
 		const currentTargetStaffAngle = propState._stepTargetStaffRotationAngle;
 
@@ -223,18 +263,15 @@ export class AnimationEngine {
 		propState.centerPathAngle = lerpAngle(currentStartCenterAngle, currentTargetCenterAngle, t);
 
 		if (motionType === 'pro') {
-			// iso
+			// Pro-spin: staff angle is always perpendicular to the path (recalculate based on current position)
 			propState.staffRotationAngle = normalizeAnglePositive(propState.centerPathAngle + PI);
 		} else {
-			// anti, static, dash
+			// Anti-spin, static, dash: interpolate between start and target angles
 			propState.staffRotationAngle = lerpAngle(currentStartStaffAngle, currentTargetStaffAngle, t);
 		}
 
 		// STEP 4: Update tracking properties
 		propState._currentStepIndex = currentStepIndex; // Update the index *after* using it
 		propState._lastT = t; // Track the last t value
-
-		// Special logging for the end of Beat 1 (Step index 0) when t is close to 1
-
 	}
 }

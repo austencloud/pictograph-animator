@@ -18,11 +18,23 @@ export interface SequenceStep {
 	letter_type?: string; // e.g., 'Type1'
 	duration?: number; // Duration in beats (default: 1)
 	start_pos?: string; // Grid state identifier at the start (overall grid state)
-	end_pos: string; // Grid state identifier at the end (overall grid state)
+	end_pos?: string; // Grid state identifier at the end (overall grid state)
 	timing?: 'split' | 'tog' | 'none' | string; // Timing relative to the other prop
 	direction?: 'same' | 'opp' | 'none' | string; // Direction relative to the other prop
 	blue_attributes: PropAttributes; // Attributes for Blue Prop (Left)
 	red_attributes: PropAttributes; // Attributes for Red Prop (Right)
+
+	// Support for the new format
+	blue_prop?: {
+		location: string;
+		orientation: string;
+		motion?: string;
+	};
+	red_prop?: {
+		location: string;
+		orientation: string;
+		motion?: string;
+	};
 }
 
 /** Defines the metadata for the entire sequence */
@@ -59,6 +71,8 @@ export interface PropState {
 	_stepTargetStaffRotationAngle?: number; // Calculated target staff angle for the end of the current step
 	_stepStartCenterPathAngle?: number; // Center path angle at the beginning of the current step
 	_stepTargetCenterPathAngle?: number; // Calculated target center path angle for the end of the current step
+	_previousEndCenterPathAngle?: number | null; // Stores the end angle from the previous step
+	_previousEndStaffRotationAngle?: number | null; // Stores the end staff rotation from the previous step
 	_initialized?: boolean; // Flag to track if the prop has been initialized
 	_currentStepIndex?: number; // Tracks the last calculated step index
 	_lastT?: number; // Tracks the last interpolation factor 't' calculated

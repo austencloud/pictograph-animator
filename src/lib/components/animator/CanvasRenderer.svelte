@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
-	import type { PropState } from '../../types/sequence.js';
-	import { GRID_VIEWBOX_SIZE, GRID_HALFWAY_POINT_OFFSET } from '../../utils/gridMapping.js';
-	import { PropRenderer } from './PropRenderer.js';
-	import { ImageLoader } from './ImageLoader.js';
+	import { fly, fade } from 'svelte/transition';
+	import type { PropState } from '../../types/sequence';
+	import { GRID_VIEWBOX_SIZE, GRID_HALFWAY_POINT_OFFSET } from '../../utils/gridMapping';
+	import { PropRenderer } from './PropRenderer';
+	import { ImageLoader } from './ImageLoader';
 
 	// Props
 	export let width: number = 600;
@@ -20,6 +21,7 @@
 	let blueStaffImage: HTMLImageElement;
 	let redStaffImage: HTMLImageElement;
 	let imagesLoaded = false;
+	let isLoading = true;
 	let loadError = '';
 
 	// Calculated values
@@ -41,16 +43,19 @@
 		ctx = canvasElement.getContext('2d');
 		if (!ctx) {
 			loadError = 'Canvas context could not be created';
+			isLoading = false;
 			return;
 		}
 
 		// Load images
 		try {
+			isLoading = true;
 			const images = await ImageLoader.loadImages();
 			gridImage = images.gridImage;
 			blueStaffImage = images.blueStaffImage;
 			redStaffImage = images.redStaffImage;
 			imagesLoaded = true;
+			isLoading = false;
 
 			// Notify parent that images are loaded
 			dispatch('imagesLoaded');
@@ -59,6 +64,7 @@
 			render();
 		} catch (error) {
 			loadError = error instanceof Error ? error.message : 'Failed to load images';
+			isLoading = false;
 			dispatch('error', { message: loadError });
 		}
 	});
@@ -158,12 +164,36 @@
 	}
 </script>
 
-<div class="canvas-container">
+<div class="canvas-container" class:is-loading={isLoading} class:has-error={loadError}>
 	<canvas bind:this={canvasElement} {width} {height} style="width: {width}px; height: {height}px;"
 	></canvas>
 
+	{#if isLoading}
+		<div class="loading-overlay" transition:fade={{ duration: 300 }}>
+			<div class="loading-spinner"></div>
+			<p class="loading-text">Preparing canvas...</p>
+		</div>
+	{/if}
+
 	{#if loadError}
-		<div class="error-message">{loadError}</div>
+		<div class="error-message" in:fly={{ y: 20, duration: 300 }}>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="24"
+				height="24"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				<circle cx="12" cy="12" r="10"></circle>
+				<line x1="12" y1="8" x2="12" y2="12"></line>
+				<line x1="12" y1="16" x2="12.01" y2="16"></line>
+			</svg>
+			<span>{loadError}</span>
+		</div>
 	{/if}
 </div>
 
@@ -182,13 +212,51 @@
 		transform: translateY(-2px);
 	}
 
+	.canvas-container.is-loading {
+		cursor: wait;
+	}
+
+	.canvas-container.has-error {
+		border: 1px solid var(--error-color);
+		box-shadow: 0 0 0 1px var(--error-color-focus);
+	}
+
 	canvas {
 		border: 1px solid var(--border-color);
 		background-color: var(--surface-color);
 		display: block;
 		transition:
 			background-color var(--transition-normal),
-			border-color var(--transition-normal);
+			border-color var(--transition-normal),
+			opacity var(--transition-normal);
+	}
+
+	.is-loading canvas {
+		opacity: 0.7;
+		filter: blur(2px);
+	}
+
+	.loading-overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		background-color: rgba(var(--surface-color-rgb), 0.7);
+		backdrop-filter: blur(4px);
+		z-index: 10;
+	}
+
+	.loading-text {
+		margin-top: var(--spacing-md);
+		color: var(--text-color);
+		font-weight: 500;
+		text-align: center;
+		animation: pulse 2s infinite;
 	}
 
 	.error-message {
@@ -205,6 +273,14 @@
 		border-left: 4px solid var(--error-color);
 		max-width: 80%;
 		text-align: center;
-		animation: fadeIn var(--transition-normal);
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+	}
+
+	.error-message svg {
+		flex-shrink: 0;
+		color: var(--error-color);
+		animation: pulse 2s infinite;
 	}
 </style>

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { initTheme } from '$lib/stores/theme';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import '$lib/styles/global.css';
+	import { initTheme } from '$lib/stores/theme.js';
 
 	onMount(() => {
 		initTheme();

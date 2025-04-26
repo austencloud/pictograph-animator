@@ -102,8 +102,8 @@
 
 	button {
 		padding: var(--spacing-sm) var(--spacing-lg);
-		background-color: var(--primary-color);
-		color: white;
+		background: var(--primary-gradient);
+		color: var(--text-color-on-primary);
 		border: none;
 		border-radius: var(--border-radius-md);
 		cursor: pointer;
@@ -111,45 +111,99 @@
 		align-items: center;
 		justify-content: center;
 		transition: all var(--transition-fast);
-		font-weight: 500;
-		box-shadow: var(--shadow-sm);
+		font-weight: 600;
+		box-shadow: var(--shadow-md);
+		position: relative;
+		overflow: hidden;
+	}
+
+	button::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 70%);
+		transform: scale(0);
+		opacity: 0;
+		transition:
+			transform 0.5s var(--transition-bounce),
+			opacity 0.3s ease;
 	}
 
 	button:hover {
-		background-color: var(--primary-color-hover);
 		transform: translateY(-2px);
-		box-shadow: var(--shadow-md);
+		box-shadow: var(--shadow-lg);
+	}
+
+	button:hover::before {
+		transform: scale(2);
+		opacity: 1;
 	}
 
 	button:active {
-		background-color: var(--primary-color-active);
 		transform: translateY(0);
+		box-shadow: var(--shadow-sm);
+	}
+
+	button:active::before {
+		opacity: 0.5;
+		transform: scale(1);
+		transition: 0s;
 	}
 
 	button:disabled {
-		background-color: var(--text-color-disabled);
+		background: var(--text-color-disabled);
 		color: var(--text-color-tertiary);
 		cursor: not-allowed;
 		transform: none;
-		box-shadow: none;
+		box-shadow: var(--shadow-sm);
+	}
+
+	button:disabled::before {
+		display: none;
 	}
 
 	.play-pause-btn {
 		min-width: 100px;
-		background-color: var(--button-bg, var(--primary-color));
+		background: var(--button-bg, var(--primary-gradient));
+		transition:
+			background var(--transition-normal),
+			transform var(--transition-fast),
+			box-shadow var(--transition-fast);
 	}
 
 	.play-pause-btn:hover {
-		--button-bg: var(--primary-color-hover);
+		--button-bg: var(--primary-gradient);
+		filter: brightness(1.1);
 	}
 
 	/* Change button color when playing */
 	:global(.playing) .play-pause-btn {
-		--button-bg: var(--success-color);
+		--button-bg: var(--success-gradient);
 	}
 
 	:global(.playing) .play-pause-btn:hover {
-		--button-bg: var(--success-color-hover);
+		--button-bg: var(--success-gradient);
+		filter: brightness(1.1);
+	}
+
+	/* Add a pulse effect when playing */
+	:global(.playing) .play-pause-btn .icon {
+		animation: pulse 2s infinite;
+	}
+
+	@keyframes pulse {
+		0% {
+			transform: scale(1);
+		}
+		50% {
+			transform: scale(1.1);
+		}
+		100% {
+			transform: scale(1);
+		}
 	}
 
 	.icon {
@@ -253,7 +307,25 @@
 		height: 20px;
 		background-color: var(--surface-color-active);
 		border-radius: 20px;
-		transition: 0.4s;
+		transition: background-color 0.3s var(--transition-bounce);
+		box-shadow: var(--shadow-inner);
+		overflow: hidden;
+	}
+
+	.toggle-slider::after {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background: radial-gradient(
+			circle at center,
+			rgba(255, 255, 255, 0.2) 0%,
+			rgba(255, 255, 255, 0) 70%
+		);
+		opacity: 0;
+		transition: opacity 0.3s ease;
 	}
 
 	.toggle-slider:before {
@@ -265,17 +337,48 @@
 		bottom: 2px;
 		background-color: white;
 		border-radius: 50%;
-		transition: 0.4s;
+		transition:
+			transform 0.3s var(--transition-bounce),
+			box-shadow 0.2s ease;
 		box-shadow: var(--shadow-sm);
+		z-index: 1;
+	}
+
+	.toggle-switch:hover .toggle-slider::after {
+		opacity: 1;
+	}
+
+	.toggle-switch:hover .toggle-slider:before {
+		box-shadow:
+			var(--shadow-md),
+			0 0 5px rgba(255, 255, 255, 0.5);
 	}
 
 	input:checked + .toggle-slider {
 		background-color: var(--success-color);
 	}
 
+	input:checked + .toggle-slider::after {
+		background: radial-gradient(
+			circle at center,
+			rgba(255, 255, 255, 0.3) 0%,
+			rgba(255, 255, 255, 0) 70%
+		);
+	}
+
 	input:disabled + .toggle-slider {
 		background-color: var(--text-color-disabled);
 		cursor: not-allowed;
+		opacity: 0.7;
+	}
+
+	input:disabled + .toggle-slider::after {
+		display: none;
+	}
+
+	input:disabled + .toggle-slider:before {
+		box-shadow: none;
+		opacity: 0.7;
 	}
 
 	input:checked + .toggle-slider:before {
