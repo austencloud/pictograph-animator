@@ -5,8 +5,6 @@
 	import type { SequenceData } from '../../lib/types/sequence.js';
 	import {
 		aabbSequence,
-		complexSequence,
-		aSequence,
 		getAllSequences,
 		getSequenceById,
 		initializeSequences,

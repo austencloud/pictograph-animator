@@ -135,9 +135,31 @@ export class AnimationEngine {
 
 			propState.staffRotationAngle = propState._stepStartStaffRotationAngle;
 		} else if (t === 0) {
-			// For subsequent steps, we should NOT reset the start angles
-			// Instead, we should use the end angles from the previous step
-			// This ensures continuity between steps
+			// We've just entered a NEW step – derive the start angles
+			// from the END of the previous step (if it exists).
+			const startLocFromPrev = prevAttributes?.end_loc ?? attributes.start_loc;
+			propState._stepStartCenterPathAngle = mapPositionToAngle(startLocFromPrev);
+
+			// Determine the staff-rotation angle that existed at the *end* of
+			// the previous step (or fall back to sensible defaults).
+			const prevEndOri = prevAttributes?.end_ori ?? prevAttributes?.start_ori;
+			const oriAngle = mapOrientationToAngle(prevEndOri);
+
+			if (oriAngle !== null) {
+				propState._stepStartStaffRotationAngle = oriAngle;
+			} else if (prevEndOri?.toLowerCase() === 'in') {
+				propState._stepStartStaffRotationAngle = propState._stepStartCenterPathAngle + PI;
+			} else if (prevEndOri?.toLowerCase() === 'out') {
+				propState._stepStartStaffRotationAngle = propState._stepStartCenterPathAngle;
+			} else if (attributes.motion_type === 'pro') {
+				propState._stepStartStaffRotationAngle = propState._stepStartCenterPathAngle + PI;
+			} else {
+				propState._stepStartStaffRotationAngle = propState._stepStartCenterPathAngle;
+			}
+
+			// Make sure the first rendered frame of this step is correct
+			propState.centerPathAngle = propState._stepStartCenterPathAngle;
+			propState.staffRotationAngle = propState._stepStartStaffRotationAngle;
 
 			// Only log a warning if there's a discontinuity in the sequence data
 			if (prevAttributes && prevAttributes.end_loc !== startLoc) {
@@ -145,10 +167,6 @@ export class AnimationEngine {
 					`Potential discontinuity in sequence data: Previous step ends at ${prevAttributes.end_loc} but current step starts at ${startLoc}`
 				);
 			}
-
-			// We don't need to update the start angles here because they were already set
-			// at the end of the previous step in the "if (t >= 0.99)" block below
-			// This is the key to maintaining continuity between steps
 		}
 
 		// Calculate target center path angle for this step

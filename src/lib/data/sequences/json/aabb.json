@@ -1,14 +1,14 @@
 [
 	{
-		"word": "A",
+		"word": "AABB",
 		"author": "Austen Cloud",
-		"level": 1,
-		"prop_type": "staff",
+		"level": 0,
+		"prop_type": "sword",
 		"grid_mode": "diamond",
-		"is_circular": true,
-		"can_be_CAP": true,
+		"is_circular": false,
+		"can_be_CAP": false,
 		"is_strict_rotated_CAP": false,
-		"is_strict_mirrored_CAP": true,
+		"is_strict_mirrored_CAP": false,
 		"is_strict_swapped_CAP": false,
 		"is_mirrored_swapped_CAP": false,
 		"is_rotated_swapped_CAP": false
@@ -97,55 +97,55 @@
 	},
 	{
 		"beat": 3,
-		"letter": "A",
+		"letter": "B",
 		"letter_type": "Type1",
 		"duration": 1,
 		"start_pos": "alpha5",
-		"end_pos": "alpha7",
+		"end_pos": "alpha3",
 		"timing": "split",
 		"direction": "same",
 		"blue_attributes": {
-			"motion_type": "pro",
+			"motion_type": "anti",
 			"start_ori": "in",
 			"prop_rot_dir": "cw",
 			"start_loc": "n",
-			"end_loc": "e",
+			"end_loc": "w",
 			"turns": 0,
-			"end_ori": "in"
+			"end_ori": "out"
 		},
 		"red_attributes": {
-			"motion_type": "pro",
+			"motion_type": "anti",
 			"start_ori": "in",
 			"prop_rot_dir": "cw",
 			"start_loc": "s",
-			"end_loc": "w",
+			"end_loc": "e",
 			"turns": 0,
-			"end_ori": "in"
+			"end_ori": "out"
 		}
 	},
 	{
 		"beat": 4,
-		"letter": "A",
+		"letter": "B",
 		"letter_type": "Type1",
 		"duration": 1,
-		"start_pos": "alpha7",
+		"start_pos": "alpha3",
 		"end_pos": "alpha1",
 		"timing": "split",
 		"direction": "same",
 		"blue_attributes": {
-			"motion_type": "pro",
-			"start_ori": "in",
+			"motion_type": "anti",
+			"start_ori": "out",
 			"prop_rot_dir": "cw",
-			"start_loc": "e",
+			"start_loc": "w",
 			"end_loc": "s",
 			"turns": 0,
 			"end_ori": "in"
 		},
 		"red_attributes": {
-			"motion_type": "pro",
-			"start_ori": "in",
+			"motion_type": "anti",
+			"start_ori": "out",
 			"prop_rot_dir": "cw",
-			"start_loc": "w",
+			"start_loc": "e",
 			"end_loc": "n",
 			"turns": 0,
 			"end_ori": "in"

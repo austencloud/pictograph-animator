@@ -4,8 +4,6 @@
 	import type { SequenceData } from '../lib/types/sequence.js';
 	import {
 		aabbSequence,
-		complexSequence,
-		aSequence,
 		getSequenceById,
 		initializeSequences
 	} from '../lib/data/sequences/index.js';
