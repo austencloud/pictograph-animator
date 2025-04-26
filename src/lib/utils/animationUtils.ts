@@ -1,4 +1,4 @@
-import { TWO_PI, normalizeAngleSigned, normalizeAnglePositive } from './gridMapping';
+import { normalizeAnglePositive, normalizeAngleSigned } from "./gridMapping.js";
 
 /** Linear interpolation between two numbers. */
 export function lerp(a: number, b: number, t: number): number {
