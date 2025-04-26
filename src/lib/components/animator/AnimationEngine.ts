@@ -7,6 +7,12 @@ import {
 	normalizeAnglePositive
 } from '../../utils/gridMapping.js';
 import { lerpAngle } from '../../utils/animationUtils.js';
+import {
+	calculateProIsolationStaffAngle,
+	calculateAntispinTargetAngle,
+	calculateStaticStaffAngle,
+	calculateDashTargetAngle
+} from '../../utils/propMotionPhysics.js';
 
 /**
  * Core animation engine for calculating prop states
@@ -86,7 +92,7 @@ export class AnimationEngine {
 			// Save end state of current step for smooth transitions
 			bluePropState._previousEndCenterPathAngle = bluePropState.centerPathAngle;
 			bluePropState._previousEndStaffRotationAngle = bluePropState.staffRotationAngle;
-			
+
 			redPropState._previousEndCenterPathAngle = redPropState.centerPathAngle;
 			redPropState._previousEndStaffRotationAngle = redPropState.staffRotationAngle;
 		}
@@ -142,10 +148,11 @@ export class AnimationEngine {
 
 		if (isNewFormat) {
 			// New format mapping
-			startLoc = attributes.start_loc; // Use location as start_loc
-			endLoc = attributes.end_loc; // In new format, location is both start and end
-
-
+			startLoc = attributes.start_loc;
+			endLoc = attributes.end_loc;
+			motionType = attributes.motion_type;
+			propRotDir = attributes.prop_rot_dir;
+			turns = attributes.turns || 0;
 			startOri = attributes.start_ori;
 			endOri = attributes.end_ori;
 		} else {
@@ -172,37 +179,50 @@ export class AnimationEngine {
 		// Detect if this is the *first frame* of a *new* step (either the very first step or a transition)
 		const isNewStepStart =
 			currentStepIndex !== previousStepIndex || (isFirstStepOverall && !propState._initialized);
-			
+
 		// STEP 1: Initialize or update the starting angles for this step
 		if (isNewStepStart) {
 			if (isFirstStepOverall && !propState._initialized) {
 				// --- Condition 1: First Render of First Step ---
 				propState._stepStartCenterPathAngle = mapPositionToAngle(startLoc);
-				
+
 				if (startOri) {
 					const oriAngle = mapOrientationToAngle(startOri);
-					if (oriAngle !== null) propState._stepStartStaffRotationAngle = oriAngle;
-					else if (startOri.toLowerCase() === 'in')
+					if (oriAngle !== null) {
+						// Use the specified orientation angle
+						propState._stepStartStaffRotationAngle = oriAngle;
+					} else if (startOri.toLowerCase() === 'in') {
+						// 'in' means pointing toward center
 						propState._stepStartStaffRotationAngle = propState._stepStartCenterPathAngle + PI;
-					else if (startOri.toLowerCase() === 'out')
+					} else if (startOri.toLowerCase() === 'out') {
+						// 'out' means pointing away from center
 						propState._stepStartStaffRotationAngle = propState._stepStartCenterPathAngle;
-					else propState._stepStartStaffRotationAngle = propState._stepStartCenterPathAngle + PI;
+					} else {
+						// Default to 'in' for unknown orientations
+						propState._stepStartStaffRotationAngle = propState._stepStartCenterPathAngle + PI;
+					}
 				} else if (motionType === 'pro') {
+					// Pro isolation: Staff always points toward the center
 					propState._stepStartStaffRotationAngle = propState._stepStartCenterPathAngle + PI;
 				} else {
+					// Default orientation for other motion types
 					propState._stepStartStaffRotationAngle = propState._stepStartCenterPathAngle;
 				}
+
 				propState.centerPathAngle = propState._stepStartCenterPathAngle;
 				propState.staffRotationAngle = propState._stepStartStaffRotationAngle;
 				propState._initialized = true;
-				
+
 				// Initialize previous end angles for first step
 				propState._previousEndCenterPathAngle = propState._stepStartCenterPathAngle;
 				propState._previousEndStaffRotationAngle = propState._stepStartStaffRotationAngle;
 			} else {
 				// --- Condition 2 or 3: Transition to a new step (or loop back) ---
 				// Use the stored previous end angles for smooth transitions
-				if (propState._previousEndCenterPathAngle !== null && propState._previousEndStaffRotationAngle !== null) {
+				if (
+					propState._previousEndCenterPathAngle !== null &&
+					propState._previousEndStaffRotationAngle !== null
+				) {
 					propState._stepStartCenterPathAngle = propState._previousEndCenterPathAngle;
 					propState._stepStartStaffRotationAngle = propState._previousEndStaffRotationAngle;
 				} else {
@@ -229,22 +249,43 @@ export class AnimationEngine {
 		const currentTargetCenterAngle = propState._stepTargetCenterPathAngle;
 
 		// Calculate target staff rotation angle based on motion type
-		let calculatedTargetStaffAngle = currentStartStaffAngle;
-		
+		let calculatedTargetStaffAngle: number;
+
 		if (motionType === 'pro') {
-			// Pro-spin: staff always points to center (perpendicular to path)
-			calculatedTargetStaffAngle = currentTargetCenterAngle + PI;
+			// Pro isolation: Staff always points toward the center
+			calculatedTargetStaffAngle = calculateProIsolationStaffAngle(
+				currentTargetCenterAngle,
+				propRotDir
+			);
 		} else if (motionType === 'anti') {
-			// Anti-spin: independent rotation based on turns and direction
-			const rotationDirMultiplier = propRotDir === 'cw' ? 1 : propRotDir === 'ccw' ? -1 : 0;
-			const totalRotationDelta = TWO_PI * (turns ?? 0) * rotationDirMultiplier;
-			calculatedTargetStaffAngle = currentStartStaffAngle + totalRotationDelta;
+			// Antispin: Handle the correct physics based on turns parameter
+			calculatedTargetStaffAngle = calculateAntispinTargetAngle(
+				currentStartCenterAngle,
+				currentTargetCenterAngle,
+				currentStartStaffAngle,
+				turns || 0,
+				propRotDir
+			);
+		} else if (motionType === 'static') {
+			// Static hold: Maintain orientation as specified
+			calculatedTargetStaffAngle = calculateStaticStaffAngle(
+				currentTargetCenterAngle,
+				endOri || 'in'
+			);
+		} else if (motionType === 'dash') {
+			// Dash motion: Special case with minimal rotation
+			calculatedTargetStaffAngle = calculateDashTargetAngle(
+				currentStartCenterAngle,
+				currentTargetCenterAngle,
+				currentStartStaffAngle,
+				propRotDir
+			);
 		} else {
-			// Static/dash: maintain orientation unless end_ori specifies otherwise
+			// Default fallback for unknown motion types
 			calculatedTargetStaffAngle = currentStartStaffAngle;
 		}
-		
-		// Consider end_ori if specified (except for pro-spin which always points to center)
+
+		// Allow end_ori to override calculated target angle (except for pro isolation)
 		if (motionType !== 'pro' && endOri) {
 			const endOriAngle = mapOrientationToAngle(endOri);
 			if (endOriAngle !== null) {
@@ -255,7 +296,7 @@ export class AnimationEngine {
 				calculatedTargetStaffAngle = currentTargetCenterAngle;
 			}
 		}
-		
+
 		propState._stepTargetStaffRotationAngle = calculatedTargetStaffAngle;
 		const currentTargetStaffAngle = propState._stepTargetStaffRotationAngle;
 
@@ -263,10 +304,13 @@ export class AnimationEngine {
 		propState.centerPathAngle = lerpAngle(currentStartCenterAngle, currentTargetCenterAngle, t);
 
 		if (motionType === 'pro') {
-			// Pro-spin: staff angle is always perpendicular to the path (recalculate based on current position)
-			propState.staffRotationAngle = normalizeAnglePositive(propState.centerPathAngle + PI);
+			// Pro isolation: Staff angle is always recalculated based on current position
+			propState.staffRotationAngle = calculateProIsolationStaffAngle(
+				propState.centerPathAngle,
+				propRotDir
+			);
 		} else {
-			// Anti-spin, static, dash: interpolate between start and target angles
+			// All other motion types: Interpolate between start and target angles
 			propState.staffRotationAngle = lerpAngle(currentStartStaffAngle, currentTargetStaffAngle, t);
 		}
 

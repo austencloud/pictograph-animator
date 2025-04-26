@@ -118,7 +118,7 @@ export const sequencesActions = {
 							if (retrySequences.length > 0) {
 								console.log(`Retry successful: Found ${retrySequences.length} sequences`);
 								sequencesActions.setSequences(retrySequences);
-								
+
 								// Set initial selection if needed
 								const currentSelection = get(selectedSequenceStore);
 								if (!currentSelection.data && retrySequences[0]) {
