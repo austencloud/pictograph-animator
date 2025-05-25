@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { PropState } from '../../types/core.js';
 	import { svgStringToImage } from '../../svgStringToImage.js';
-	import { PROP_COLORS, CANVAS_COLORS } from '../../constants/colors.js';
+	import { PROP_COLORS } from '../../constants/colors.js';
 	import { ANIMATION_CONSTANTS } from '../../constants/animation.js';
 
 	// Modern Svelte 5 props
@@ -19,6 +19,44 @@
 		gridVisible?: boolean;
 	} = $props();
 
+	// Layer2 visibility state with localStorage persistence
+	let layer2Visible = $state(false);
+
+	// Dark mode detection
+	let isDarkMode = $state(false);
+
+	// Initialize from localStorage and detect dark mode
+	$effect(() => {
+		if (typeof window !== 'undefined') {
+			const saved = localStorage.getItem('grid-layer2-visible');
+			layer2Visible = saved === 'true';
+			isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+		}
+	});
+
+	// Save layer2 visibility to localStorage
+	$effect(() => {
+		if (typeof window !== 'undefined') {
+			localStorage.setItem('grid-layer2-visible', layer2Visible.toString());
+		}
+	});
+
+	// Watch for theme changes
+	$effect(() => {
+		if (typeof window !== 'undefined') {
+			const observer = new MutationObserver(() => {
+				isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+			});
+
+			observer.observe(document.documentElement, {
+				attributes: true,
+				attributeFilter: ['data-theme']
+			});
+
+			return () => observer.disconnect();
+		}
+	});
+
 	let canvasElement: HTMLCanvasElement;
 	let ctx: CanvasRenderingContext2D | null = null;
 	let gridImage: HTMLImageElement | null = null;
@@ -28,61 +66,98 @@
 	let rafId: number | null = null;
 	let needsRender = $state(true);
 
-	// SVG markup for grid and props using constants
-	const gridSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="-250 -250 500 500">
-    <circle cx="0" cy="0" r="200" fill="none" stroke="${CANVAS_COLORS.GRID}" stroke-width="1" />
-    <circle cx="0" cy="0" r="5" fill="${CANVAS_COLORS.CENTER_DOT}" />
-    <line x1="-200" y1="0" x2="200" y2="0" stroke="${CANVAS_COLORS.GRID}" stroke-width="1" />
-    <line x1="0" y1="-200" x2="0" y2="200" stroke="${CANVAS_COLORS.GRID}" stroke-width="1" />
-    <text x="205" y="15" fill="${CANVAS_COLORS.LABELS}" font-family="sans-serif" font-size="14">E</text>
-    <text x="-215" y="15" fill="${CANVAS_COLORS.LABELS}" font-family="sans-serif" font-size="14">W</text>
-    <text x="-5" y="-205" fill="${CANVAS_COLORS.LABELS}" font-family="sans-serif" font-size="14">N</text>
-    <text x="-5" y="220" fill="${CANVAS_COLORS.LABELS}" font-family="sans-serif" font-size="14">S</text>
-  </svg>`;
+	// Function to generate theme-aware grid SVG
+	function generateGridSvg(showLayer2: boolean, isDarkMode: boolean): string {
+		const gridColor = isDarkMode ? '#ffffff' : '#000000';
+		const layer2Color = showLayer2 ? gridColor : 'none';
 
-	const blueStaffSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="-50 -50 100 100">
-    <rect x="-40" y="-2.5" width="80" height="5" fill="${PROP_COLORS.BLUE}" rx="2" ry="2" />
-    <circle cx="0" cy="0" r="4" fill="#1565C0" />
-  </svg>`;
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 950 950">
+			<g>
+				<circle fill="${gridColor}" cx="475" cy="175" r="25"/>
+				<circle fill="${gridColor}" cx="775" cy="475" r="25"/>
+				<circle fill="${gridColor}" cx="475" cy="775" r="25"/>
+				<circle fill="${gridColor}" cx="175" cy="475" r="25"/>
+			</g>
+			<g>
+				<circle fill="${gridColor}" cx="475" cy="331.9" r="8"/>
+				<circle fill="${gridColor}" cx="618.1" cy="475" r="8"/>
+				<circle fill="${gridColor}" cx="475" cy="618.1" r="8"/>
+				<circle fill="${gridColor}" cx="331.9" cy="475" r="8"/>
+			</g>
+			<g>
+				<circle fill="${layer2Color}" cx="618.1" cy="331.9" r="8.8"/>
+				<circle fill="${layer2Color}" cx="618.1" cy="618.1" r="8.8"/>
+				<circle fill="${layer2Color}" cx="331.9" cy="618.1" r="8.8"/>
+				<circle fill="${layer2Color}" cx="331.9" cy="331.9" r="8.8"/>
+			</g>
+			<g>
+				<circle fill="${layer2Color}" cx="625" cy="325" r="8.8"/>
+				<circle fill="${layer2Color}" cx="625" cy="625" r="8.8"/>
+				<circle fill="${layer2Color}" cx="325" cy="625" r="8.8"/>
+				<circle fill="${layer2Color}" cx="325" cy="325" r="8.8"/>
+			</g>
+			<g>
+				<circle fill="${layer2Color}" cx="475" cy="325" r="4.7"/>
+				<circle fill="${layer2Color}" cx="625" cy="475" r="4.7"/>
+				<circle fill="${layer2Color}" cx="475" cy="625" r="4.7"/>
+				<circle fill="${layer2Color}" cx="325" cy="475" r="4.7"/>
+			</g>
+			<circle fill="${gridColor}" cx="475" cy="475" r="12"/>
+		</svg>`;
+	}
 
-	const redStaffSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="-50 -50 100 100">
-    <rect x="-40" y="-2.5" width="80" height="5" fill="${PROP_COLORS.RED}" rx="2" ry="2" />
-    <circle cx="0" cy="0" r="4" fill="#B71C1C" />
-  </svg>`;
+	// Staff SVG using exact design from specification
+	const blueStaffSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 252.8 77.8" style="enable-background:new 0 0 252.8 77.8;">
+		<style type="text/css">
+			.staff-body { fill: ${PROP_COLORS.BLUE}; stroke: #FFFFFF; stroke-width: 2.75; stroke-miterlimit: 10; }
+			.center-point { fill: #0000FF; }
+		</style>
+		<path class="staff-body" d="M251.4,67.7V10.1c0-4.8-4.1-8.7-9.1-8.7s-9.1,3.9-9.1,8.7v19.2H10.3c-4.9,0-8.9,3.8-8.9,8.5V41
+			c0,4.6,4,8.5,8.9,8.5h222.9v18.2c0,4.8,4.1,8.7,9.1,8.7S251.4,72.5,251.4,67.7z"/>
+		<circle class="center-point" cx="126.4" cy="38.9" r="2"/>
+	</svg>`;
+
+	const redStaffSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 252.8 77.8" style="enable-background:new 0 0 252.8 77.8;">
+		<style type="text/css">
+			.staff-body { fill: ${PROP_COLORS.RED}; stroke: #FFFFFF; stroke-width: 2.75; stroke-miterlimit: 10; }
+			.center-point { fill: #0000FF; }
+		</style>
+		<path class="staff-body" d="M251.4,67.7V10.1c0-4.8-4.1-8.7-9.1-8.7s-9.1,3.9-9.1,8.7v19.2H10.3c-4.9,0-8.9,3.8-8.9,8.5V41
+			c0,4.6,4,8.5,8.9,8.5h222.9v18.2c0,4.8,4.1,8.7,9.1,8.7S251.4,72.5,251.4,67.7z"/>
+		<circle class="center-point" cx="126.4" cy="38.9" r="2"/>
+	</svg>`;
 
 	// Track prop changes to trigger re-renders
 	$effect(() => {
-		// This effect runs when blueProp or redProp changes
 		blueProp;
 		redProp;
 		gridVisible;
 		needsRender = true;
-		startRenderLoop(); // Start the render loop when changes occur
+		startRenderLoop();
 	});
 
-	// Load SVG images and handle lifecycle with $effect
+	// Initial load of staff images and canvas setup
 	$effect(() => {
-		const loadImages = async () => {
+		const loadStaffImages = async () => {
 			try {
-				[gridImage, blueStaffImage, redStaffImage] = await Promise.all([
-					svgStringToImage(gridSvg, width, height),
+				[blueStaffImage, redStaffImage] = await Promise.all([
 					svgStringToImage(
 						blueStaffSvg,
-						ANIMATION_CONSTANTS.STAFF_WIDTH,
-						ANIMATION_CONSTANTS.STAFF_HEIGHT
+						ANIMATION_CONSTANTS.STAFF_VIEWBOX_WIDTH,
+						ANIMATION_CONSTANTS.STAFF_VIEWBOX_HEIGHT
 					),
 					svgStringToImage(
 						redStaffSvg,
-						ANIMATION_CONSTANTS.STAFF_WIDTH,
-						ANIMATION_CONSTANTS.STAFF_HEIGHT
+						ANIMATION_CONSTANTS.STAFF_VIEWBOX_WIDTH,
+						ANIMATION_CONSTANTS.STAFF_VIEWBOX_HEIGHT
 					)
 				]);
 
 				ctx = canvasElement.getContext('2d');
+
+				await loadGridImage();
 				imagesLoaded = true;
 				needsRender = true;
-
-				// Start optimized render loop
 				startRenderLoop();
 			} catch (err) {
 				console.error('Failed to load SVG images:', err);
@@ -90,10 +165,9 @@
 		};
 
 		if (canvasElement) {
-			loadImages();
+			loadStaffImages();
 		}
 
-		// Cleanup function
 		return () => {
 			if (rafId !== null) {
 				cancelAnimationFrame(rafId);
@@ -101,93 +175,150 @@
 		};
 	});
 
-	// Optimized render loop - only renders when needed
+	// Grid regeneration when layer2 or theme changes
+	$effect(() => {
+		layer2Visible;
+		isDarkMode;
+		if (imagesLoaded) {
+			loadGridImage();
+		}
+	});
+
+	async function loadGridImage() {
+		try {
+			const currentGridSvg = generateGridSvg(layer2Visible, isDarkMode);
+			gridImage = await svgStringToImage(currentGridSvg, width, height);
+			needsRender = true;
+			startRenderLoop();
+		} catch (err) {
+			console.error('Failed to load grid image:', err);
+		}
+	}
+
 	function renderLoop(): void {
 		if (!ctx || !imagesLoaded) return;
 
 		if (needsRender) {
 			render();
 			needsRender = false;
-			// Continue the loop only if we rendered something
 			rafId = requestAnimationFrame(renderLoop);
 		} else {
-			// Stop the loop when no rendering is needed
 			rafId = null;
 		}
 	}
 
-	// Start render loop when needed
 	function startRenderLoop(): void {
 		if (rafId === null && ctx && imagesLoaded) {
 			rafId = requestAnimationFrame(renderLoop);
 		}
 	}
 
-	// Actual render function
 	function render(): void {
 		if (!ctx || !imagesLoaded) return;
 
-		// Clear canvas
 		ctx.clearRect(0, 0, width, height);
 
-		// Draw grid if visible
 		if (gridVisible && gridImage) {
 			ctx.drawImage(gridImage, 0, 0, width, height);
 		}
 
-		// Center transform
-		const centerX = width / 2;
-		const centerY = height / 2;
-
-		// Draw props
 		if (blueStaffImage) {
-			drawProp(ctx, blueStaffImage, blueProp, centerX, centerY);
+			drawProp(ctx, blueStaffImage, blueProp);
 		}
 
 		if (redStaffImage) {
-			drawProp(ctx, redStaffImage, redProp, centerX, centerY);
+			drawProp(ctx, redStaffImage, redProp);
 		}
 	}
 
-	// Draw a prop on canvas
 	function drawProp(
 		context: CanvasRenderingContext2D,
 		image: HTMLImageElement,
-		prop: PropState,
-		centerX: number,
-		centerY: number
+		prop: PropState
 	): void {
-		const scale = ANIMATION_CONSTANTS.DEFAULT_PROP_SCALE;
 		context.save();
 
-		// Translate to center
-		context.translate(centerX, centerY);
+		const gridScaleFactor = width / ANIMATION_CONSTANTS.GRID_VIEWBOX_SIZE;
+		const canvasX = prop.x * gridScaleFactor;
+		const canvasY = prop.y * gridScaleFactor;
 
-		// Move to prop position on path (circle)
-		const pathRadius = width * ANIMATION_CONSTANTS.DEFAULT_PATH_RADIUS_RATIO;
-		const x = Math.cos(prop.centerPathAngle) * pathRadius;
-		const y = Math.sin(prop.centerPathAngle) * pathRadius;
-		context.translate(x, y);
-
-		// Rotate staff
+		context.translate(canvasX, canvasY);
 		context.rotate(prop.staffRotationAngle);
 
-		// Draw staff centered on rotation point
-		const drawWidth = image.width * scale;
-		const drawHeight = image.height * scale;
-		context.drawImage(image, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+		const staffWidth = ANIMATION_CONSTANTS.STAFF_VIEWBOX_WIDTH * gridScaleFactor;
+		const staffHeight = ANIMATION_CONSTANTS.STAFF_VIEWBOX_HEIGHT * gridScaleFactor;
+		const centerOffsetX = ANIMATION_CONSTANTS.STAFF_CENTER_X * gridScaleFactor;
+		const centerOffsetY = ANIMATION_CONSTANTS.STAFF_CENTER_Y * gridScaleFactor;
 
+		context.drawImage(image, -centerOffsetX, -centerOffsetY, staffWidth, staffHeight);
 		context.restore();
 	}
 </script>
 
-<canvas bind:this={canvasElement} {width} {height} style="width: {width}px; height: {height}px;"
-></canvas>
+<div class="canvas-wrapper">
+	<canvas bind:this={canvasElement} {width} {height} style="width: {width}px; height: {height}px;"
+	></canvas>
+
+	<div class="grid-controls">
+		<label class="layer2-toggle">
+			<input type="checkbox" bind:checked={layer2Visible} title="Show/hide layer2 grid points" />
+			<span>Show Layer2 Points</span>
+		</label>
+	</div>
+</div>
 
 <style>
+	.canvas-wrapper {
+		position: relative;
+		display: inline-block;
+	}
+
 	canvas {
-		border: 1px solid var(--border-color, #ddd);
+		border: 1px solid var(--color-border);
 		border-radius: 4px;
-		background: var(--canvas-background, white);
+		background: var(--color-surface);
+		transition: all 0.3s ease;
+		display: block;
+	}
+
+	.grid-controls {
+		position: absolute;
+		top: 8px;
+		right: 8px;
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		padding: 0.5rem;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+		transition: all 0.3s ease;
+	}
+
+	.layer2-toggle {
+		display: flex;
+		align-items: center;
+		cursor: pointer;
+		font-size: 0.85rem;
+		color: var(--color-text-primary);
+		margin: 0;
+		user-select: none;
+	}
+
+	.layer2-toggle input[type='checkbox'] {
+		margin-right: 0.5rem;
+		cursor: pointer;
+		accent-color: var(--color-primary);
+	}
+
+	.layer2-toggle span {
+		font-weight: 500;
+	}
+
+	.layer2-toggle:hover {
+		color: var(--color-primary);
+	}
+
+	/* Dark mode adjustments */
+	:global([data-theme='dark']) .grid-controls {
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 	}
 </style>

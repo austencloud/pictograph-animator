@@ -68,17 +68,19 @@
 		width: 100%;
 		font-family: monospace;
 		padding: 0.75rem;
-		border: 2px solid var(--border-color, #e0e0e0);
+		border: 2px solid var(--color-border);
 		border-radius: 8px;
 		resize: vertical;
-		transition: border-color 0.2s ease;
+		transition: all 0.2s ease;
 		font-size: 0.875rem;
+		background: var(--color-surface);
+		color: var(--color-text-primary);
 	}
 
 	textarea:focus {
 		outline: none;
-		border-color: var(--primary-color, #2196f3);
-		box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+		border-color: var(--color-primary);
+		box-shadow: 0 0 0 3px var(--color-primary-alpha);
 	}
 
 	textarea:disabled {
@@ -88,7 +90,7 @@
 
 	.load-button {
 		padding: 0.75rem 2rem;
-		background: linear-gradient(135deg, var(--success-color, #4caf50), #45a049);
+		background: var(--color-success);
 		color: white;
 		border: none;
 		border-radius: 8px;
@@ -100,9 +102,10 @@
 	}
 
 	.load-button:hover:not(:disabled) {
-		background: linear-gradient(135deg, #45a049, #3d8b40);
+		background: var(--color-success);
 		transform: translateY(-1px);
 		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+		filter: brightness(1.1);
 	}
 
 	.load-button:disabled {

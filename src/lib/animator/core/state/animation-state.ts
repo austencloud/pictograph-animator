@@ -112,7 +112,7 @@ export class AnimationStateManager {
 		this.state.sequenceData = data;
 		this.state.sequenceWord = metadata.word || '';
 		this.state.sequenceAuthor = metadata.author || '';
-		this.state.totalBeats = data.length - 1; // Subtract metadata
+		this.state.totalBeats = data.length - 2; // Subtract metadata and start position
 		this.state.canLoop = this.state.totalBeats > 0;
 		this.state.currentBeat = 0;
 		this.state.isPlaying = false;

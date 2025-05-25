@@ -150,8 +150,14 @@ export class InputValidator {
 		}
 
 		// Validate prop attributes
-		const blueValidation = this.validatePropAttributes(step.blue_attributes, `Step ${stepNumber} Blue`);
-		const redValidation = this.validatePropAttributes(step.red_attributes, `Step ${stepNumber} Red`);
+		const blueValidation = this.validatePropAttributes(
+			step.blue_attributes,
+			`Step ${stepNumber} Blue`
+		);
+		const redValidation = this.validatePropAttributes(
+			step.red_attributes,
+			`Step ${stepNumber} Red`
+		);
 
 		errors.push(...blueValidation.errors, ...redValidation.errors);
 		warnings.push(...blueValidation.warnings, ...redValidation.warnings);
@@ -189,8 +195,35 @@ export class InputValidator {
 			errors.push(`${context}: Invalid motion_type '${attrs.motion_type}'`);
 		}
 
-		// Validate locations
-		const validLocations = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'];
+		// Validate locations - include all diamond grid positions
+		const validLocations = [
+			// Cardinal directions (outer diamond points)
+			'n',
+			'e',
+			's',
+			'w',
+			// Diagonal directions (layer2 points)
+			'ne',
+			'se',
+			'sw',
+			'nw',
+			// Hand points
+			'n_hand',
+			'e_hand',
+			's_hand',
+			'w_hand',
+			// Strict variants
+			'ne_strict',
+			'se_strict',
+			'sw_strict',
+			'nw_strict',
+			'n_hand_strict',
+			'e_hand_strict',
+			's_hand_strict',
+			'w_hand_strict',
+			// Center
+			'center'
+		];
 		if (attrs.start_loc && !validLocations.includes(attrs.start_loc)) {
 			errors.push(`${context}: Invalid start_loc '${attrs.start_loc}'`);
 		}
@@ -208,7 +241,7 @@ export class InputValidator {
 		}
 
 		// Validate rotation direction
-		if (attrs.prop_rot_dir && !['cw', 'ccw'].includes(attrs.prop_rot_dir)) {
+		if (attrs.prop_rot_dir && !['cw', 'ccw', 'no_rot'].includes(attrs.prop_rot_dir)) {
 			errors.push(`${context}: Invalid prop_rot_dir '${attrs.prop_rot_dir}'`);
 		}
 
@@ -219,7 +252,9 @@ export class InputValidator {
 			} else if (attrs.turns < 0) {
 				errors.push(`${context}: Turns cannot be negative`);
 			} else if (attrs.turns > 10) {
-				warnings.push(`${context}: High number of turns (${attrs.turns}) may be difficult to visualize`);
+				warnings.push(
+					`${context}: High number of turns (${attrs.turns}) may be difficult to visualize`
+				);
 			}
 		}
 
@@ -243,7 +278,8 @@ export class InputValidator {
 			errors.push('Only PNG files are supported for sequence import');
 		}
 
-		if (file.size > 10 * 1024 * 1024) { // 10MB
+		if (file.size > 10 * 1024 * 1024) {
+			// 10MB
 			warnings.push('Large file size may take longer to process');
 		}
 

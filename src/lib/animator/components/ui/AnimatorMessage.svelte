@@ -58,18 +58,19 @@
 		margin: 0.5rem 0;
 		border-left: 4px solid;
 		animation: slideIn 0.3s ease-out;
+		transition: all 0.3s ease;
 	}
 
 	.error {
-		background-color: var(--error-light, #ffebee);
-		border-left-color: var(--error-color, #d32f2f);
-		color: var(--error-dark, #c62828);
+		background: var(--color-surface);
+		border-left-color: var(--color-error);
+		color: var(--color-error);
 	}
 
 	.success {
-		background-color: var(--success-light, #e8f5e8);
-		border-left-color: var(--success-color, #4caf50);
-		color: var(--success-dark, #2e7d32);
+		background: var(--color-surface);
+		border-left-color: var(--color-success);
+		color: var(--color-success);
 	}
 
 	.message-icon {

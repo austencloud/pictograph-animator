@@ -33,25 +33,26 @@
 	</section>
 
 	<section class="content">
-		<div class="container">
-			{#if isClient}
+		{#if isClient}
+			<div class="animator-container">
 				<AnimatorApp />
-			{:else}
+			</div>
+		{:else}
+			<div class="container">
 				<div class="loading">
 					<p>Loading animator...</p>
 				</div>
-			{/if}
-
-			<div class="info-box">
-				<h2>How to use</h2>
-				<ol>
-					<li>Upload or paste a pictograph sequence</li>
-					<li>Use the controls to play, pause, and adjust animation speed</li>
-					<li>Watch the visualization of your flow patterns</li>
-				</ol>
-				<p class="note">For best results, use sequences with proper start and end positions.</p>
+				<div class="info-box">
+					<h2>How to use</h2>
+					<ol>
+						<li>Upload or paste a pictograph sequence</li>
+						<li>Use the controls to play, pause, and adjust animation speed</li>
+						<li>Watch the visualization of your flow patterns</li>
+					</ol>
+					<p class="note">For best results, use sequences with proper start and end positions.</p>
+				</div>
 			</div>
-		</div>
+		{/if}
 	</section>
 </main>
 
@@ -61,6 +62,9 @@
 		width: 100%;
 		max-width: 100%;
 		margin: 0 auto;
+		min-height: 100vh;
+		display: flex;
+		flex-direction: column;
 	}
 
 	.container {
@@ -68,6 +72,13 @@
 		max-width: 960px;
 		margin: 0 auto;
 		padding: 0 1rem;
+	}
+
+	.animator-container {
+		width: 100%;
+		max-width: none;
+		margin: 0;
+		padding: 0;
 	}
 
 	/* Hero section */
@@ -92,7 +103,15 @@
 
 	/* Content section */
 	.content {
-		padding: 2rem 0;
+		padding: 0;
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.animator-container {
+		flex: 1;
+		min-height: 0;
 	}
 
 	.info-box {

@@ -94,10 +94,14 @@
 		flex-direction: column;
 		gap: 1rem;
 		padding: 1rem;
-		background-color: var(--background-color, #f9f9f9);
+		background: var(--color-surface);
 		border-radius: 8px;
-		border: 1px solid var(--border-color, #e0e0e0);
-		font-family: system-ui, -apple-system, sans-serif;
+		border: 1px solid var(--color-border);
+		font-family:
+			system-ui,
+			-apple-system,
+			sans-serif;
+		transition: all 0.3s ease;
 	}
 
 	.info-section {
@@ -110,8 +114,8 @@
 		margin: 0;
 		font-size: 1rem;
 		font-weight: 600;
-		color: var(--primary-color, #2196f3);
-		border-bottom: 1px solid var(--border-color, #e0e0e0);
+		color: var(--color-primary);
+		border-bottom: 1px solid var(--color-border);
 		padding-bottom: 0.25rem;
 	}
 
@@ -124,31 +128,33 @@
 
 	.label {
 		font-weight: 500;
-		color: #666;
+		color: var(--color-text-secondary);
 		font-size: 0.9rem;
 	}
 
 	.value {
 		font-family: monospace;
 		font-weight: 600;
-		color: #333;
-		background: var(--value-background, #f0f0f0);
+		color: var(--color-text-primary);
+		background: var(--color-background);
+		border: 1px solid var(--color-border);
 		padding: 0.2rem 0.5rem;
 		border-radius: 4px;
 		font-size: 0.85rem;
+		transition: all 0.3s ease;
 	}
 
 	@media (max-width: 768px) {
 		.animator-info {
 			padding: 0.75rem;
 		}
-		
+
 		.info-item {
 			flex-direction: column;
 			align-items: flex-start;
 			gap: 0.25rem;
 		}
-		
+
 		.value {
 			align-self: flex-end;
 		}

@@ -153,21 +153,21 @@ To create compatible PNG files:
 <style>
 	.drop-zone {
 		position: relative;
-		border: 2px dashed var(--border-color, #e0e0e0);
+		border: 2px dashed var(--color-border);
 		border-radius: 12px;
 		transition: all 0.3s ease;
-		background: var(--background-color, #fafafa);
+		background: var(--color-background);
 	}
 
 	.drop-zone.drag-over {
-		border-color: var(--primary-color, #2196f3);
-		background: var(--primary-light, #f3f9ff);
+		border-color: var(--color-primary);
+		background: var(--color-primary-alpha);
 		transform: scale(1.02);
 	}
 
 	.drop-zone.processing {
-		border-color: var(--warning-color, #ff9800);
-		background: var(--warning-light, #fff8e1);
+		border-color: var(--color-warning);
+		background: var(--color-surface);
 	}
 
 	.drop-zone.disabled {
@@ -181,7 +181,7 @@ To create compatible PNG files:
 		left: 0;
 		right: 0;
 		bottom: 0;
-		background: rgba(33, 150, 243, 0.1);
+		background: var(--color-primary-alpha);
 		border-radius: 10px;
 		display: flex;
 		align-items: center;
@@ -191,13 +191,13 @@ To create compatible PNG files:
 	}
 
 	.drop-message {
-		background: var(--primary-color, #2196f3);
+		background: var(--color-primary);
 		color: white;
 		padding: 1rem 2rem;
 		border-radius: 8px;
 		font-weight: 600;
 		font-size: 1.1rem;
-		box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+		box-shadow: 0 4px 12px var(--color-primary-alpha);
 		animation: bounce 0.6s ease-in-out infinite alternate;
 	}
 

@@ -33,12 +33,10 @@
 </script>
 
 <div class="sequence-input">
-	<h2>Sequence Input</h2>
-
 	<!-- Input method selection -->
 	<div class="input-options">
 		<FilePicker onSequenceLoaded={handleSequenceLoaded} onError={handleError} {isProcessing} />
-		<span class="separator">or</span>
+		<div class="separator">or</div>
 		<button
 			type="button"
 			class="json-button"
@@ -100,37 +98,43 @@
 
 <style>
 	.sequence-input {
-		width: 100%;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		padding: 1rem;
 	}
 
 	.input-options {
 		display: flex;
-		align-items: center;
-		gap: 1rem;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.75rem;
 		margin-bottom: 1rem;
-		justify-content: center;
+		flex-shrink: 0;
 	}
 
 	.separator {
-		color: #666;
+		color: var(--color-text-secondary);
 		font-style: italic;
 		font-size: 0.9rem;
+		text-align: center;
+		padding: 0.5rem 0;
 	}
 
 	.json-button {
 		padding: 0.75rem 1.5rem;
-		border: 2px solid var(--primary-color, #2196f3);
+		border: 2px solid var(--color-primary);
 		border-radius: 8px;
 		cursor: pointer;
 		font-weight: 500;
 		transition: all 0.2s ease;
 		font-size: 0.9rem;
 		background: transparent;
-		color: var(--primary-color, #2196f3);
+		color: var(--color-primary);
 	}
 
 	.json-button:hover:not(:disabled) {
-		background: var(--primary-light, #f3f9ff);
+		background: var(--color-primary-alpha);
 		transform: translateY(-1px);
 	}
 
@@ -145,17 +149,18 @@
 	}
 
 	.error {
-		color: var(--error-color, #d32f2f);
+		color: var(--color-error);
 		font-size: 0.875rem;
 		margin-top: 0.5rem;
 		padding: 0.75rem;
-		background: var(--error-light, #ffebee);
+		background: var(--color-surface);
 		border-radius: 8px;
-		border-left: 4px solid var(--error-color, #d32f2f);
+		border-left: 4px solid var(--color-error);
 		white-space: pre-line;
 		line-height: 1.5;
 		max-height: 200px;
 		overflow-y: auto;
+		transition: all 0.3s ease;
 	}
 
 	.loading-indicator {
@@ -165,18 +170,19 @@
 		gap: 0.75rem;
 		margin-top: 1rem;
 		padding: 1rem;
-		background: var(--warning-light, #fff8e1);
+		background: var(--color-surface);
 		border-radius: 8px;
-		border-left: 4px solid var(--warning-color, #ff9800);
-		color: #e65100;
+		border-left: 4px solid var(--color-warning);
+		color: var(--color-warning);
 		font-weight: 500;
+		transition: all 0.3s ease;
 	}
 
 	.spinner {
 		width: 20px;
 		height: 20px;
-		border: 2px solid #ffcc02;
-		border-top: 2px solid var(--warning-color, #ff9800);
+		border: 2px solid var(--color-border);
+		border-top: 2px solid var(--color-warning);
 		border-radius: 50%;
 		animation: spin 1s linear infinite;
 	}
@@ -193,16 +199,17 @@
 	.help-text {
 		margin-top: 1rem;
 		padding: 1rem;
-		background: var(--background-light, #f8f9fa);
+		background: var(--color-surface);
 		border-radius: 8px;
-		border-left: 4px solid var(--primary-color, #2196f3);
+		border-left: 4px solid var(--color-primary);
 		font-size: 0.875rem;
 		line-height: 1.5;
+		transition: all 0.3s ease;
 	}
 
 	.help-text p {
 		margin: 0 0 0.5rem 0;
-		color: var(--primary-color, #2196f3);
+		color: var(--color-primary);
 	}
 
 	.help-text ul {
@@ -212,15 +219,15 @@
 
 	.help-text li {
 		margin-bottom: 0.5rem;
-		color: #555;
+		color: var(--color-text-secondary);
 	}
 
 	.help-text code {
-		background: var(--primary-light, #e3f2fd);
+		background: var(--color-primary-alpha);
 		padding: 0.2rem 0.4rem;
 		border-radius: 3px;
 		font-family: monospace;
 		font-size: 0.8rem;
-		color: var(--primary-dark, #1976d2);
+		color: var(--color-primary);
 	}
 </style>

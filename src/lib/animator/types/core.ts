@@ -43,3 +43,20 @@ export interface PropState {
 	x: number;
 	y: number;
 }
+
+export interface DictionaryItem {
+	id: string;
+	name: string;
+	filePath: string;
+	metadata: SequenceMeta;
+	sequenceData: SequenceData;
+	thumbnailUrl?: string;
+	versions: string[];
+}
+
+export interface DictionaryIndex {
+	items: DictionaryItem[];
+	categories: string[];
+	totalCount: number;
+	lastUpdated: Date;
+}

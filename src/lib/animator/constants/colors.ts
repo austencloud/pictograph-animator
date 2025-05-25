@@ -19,8 +19,6 @@ export const UI_COLORS = {
 } as const;
 
 export const CANVAS_COLORS = {
-	GRID: '#ccc',
 	BACKGROUND: 'white',
-	CENTER_DOT: '#333',
 	LABELS: '#666'
 } as const;

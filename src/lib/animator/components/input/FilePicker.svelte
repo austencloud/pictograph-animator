@@ -75,20 +75,21 @@
 <style>
 	.file-button {
 		padding: 0.75rem 1.5rem;
-		border: 2px solid var(--primary-color, #2196f3);
+		border: 2px solid var(--color-primary);
 		border-radius: 8px;
 		cursor: pointer;
 		font-weight: 500;
 		transition: all 0.2s ease;
 		font-size: 0.9rem;
-		background: var(--primary-color, #2196f3);
+		background: var(--color-primary);
 		color: white;
 	}
 
 	.file-button:hover:not(:disabled) {
-		background: var(--primary-dark, #1976d2);
-		border-color: var(--primary-dark, #1976d2);
+		background: var(--color-primary);
+		border-color: var(--color-primary);
 		transform: translateY(-1px);
+		filter: brightness(1.1);
 	}
 
 	.file-button:disabled {

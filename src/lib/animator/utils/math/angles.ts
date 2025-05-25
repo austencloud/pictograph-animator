@@ -4,6 +4,7 @@
 
 import type { Orientation } from '../../types/core.js';
 import { locationAngles, PI, TWO_PI } from './constants.js';
+import { mapPositionToAngle as diamondMapPositionToAngle } from './diamond-grid.js';
 
 export function normalizeAnglePositive(angle: number): number {
 	return ((angle % TWO_PI) + TWO_PI) % TWO_PI;
@@ -15,8 +16,8 @@ export function normalizeAngleSigned(angle: number): number {
 }
 
 export function mapPositionToAngle(loc: string | undefined): number {
-	const l = loc?.toLowerCase();
-	return locationAngles[l ?? ''] ?? 0;
+	// Use the diamond grid mapping system
+	return diamondMapPositionToAngle(loc);
 }
 
 export function mapOrientationToAngle(ori: Orientation): number {

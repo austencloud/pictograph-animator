@@ -18,9 +18,11 @@ export async function extractSequenceFromPNG(file: File): Promise<PNGParseResult
 
 		const metadata = parsePNGMetadata(uint8Array);
 		if (metadata && metadata.sequence) {
+			// Transform the raw sequence data to ensure it has the expected format
+			const transformedData = transformSequenceData(metadata.sequence);
 			return {
 				success: true,
-				data: metadata.sequence as SequenceData
+				data: transformedData
 			};
 		} else {
 			return {
@@ -115,4 +117,40 @@ function parsePNGMetadata(data: Uint8Array): PNGMetadata | null {
 	}
 
 	return null;
+}
+
+/**
+ * Transform raw sequence data from PNG to ensure it has the expected format
+ */
+function transformSequenceData(rawData: unknown): SequenceData {
+	if (!Array.isArray(rawData)) {
+		throw new Error('Sequence data must be an array');
+	}
+
+	if (rawData.length < 2) {
+		throw new Error('Sequence must contain at least metadata and one step');
+	}
+
+	// First element is metadata - keep as is
+	const metadata = rawData[0];
+
+	// Transform remaining elements to ensure they have beat numbers
+	const transformedSteps = rawData.slice(1).map((step: any, index: number) => {
+		// If step already has a beat property, use it
+		if (typeof step.beat === 'number') {
+			return step;
+		}
+
+		// If step doesn't have a beat property, assign one based on position
+		// Skip the first step if it's a start position (has sequence_start_position)
+		const isStartPosition = step.sequence_start_position !== undefined;
+		const beatNumber = isStartPosition ? 0 : index;
+
+		return {
+			...step,
+			beat: beatNumber
+		};
+	});
+
+	return [metadata, ...transformedSteps] as SequenceData;
 }

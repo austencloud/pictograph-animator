@@ -2,7 +2,7 @@
  * Sequence data validation utilities
  */
 
-import type { SequenceData } from '../../types/core';
+import type { SequenceData } from '../../types/core.js';
 
 export interface ValidationResult {
 	isValid: boolean;
@@ -65,7 +65,8 @@ export function validateFileType(file: File): ValidationResult {
 	if (!file.type.includes('png') && !file.name.toLowerCase().endsWith('.png')) {
 		return {
 			isValid: false,
-			error: 'Please select a PNG image file. Only PNG files with embedded sequence metadata are supported.'
+			error:
+				'Please select a PNG image file. Only PNG files with embedded sequence metadata are supported.'
 		};
 	}
 
