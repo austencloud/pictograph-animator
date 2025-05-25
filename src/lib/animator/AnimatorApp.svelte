@@ -12,8 +12,46 @@
 	import AnimatorInfo from './components/info/AnimatorInfo.svelte';
 	import AnimatorMessage from './components/ui/AnimatorMessage.svelte';
 
+	// Full-screen functionality
+	let isFullScreen = $state(false);
+
 	// Setup engine
 	const engine = new AnimationEngine();
+
+	// Full-screen functionality
+	function toggleFullScreen(): void {
+		if (!document.fullscreenElement) {
+			document.documentElement
+				.requestFullscreen()
+				.then(() => {
+					isFullScreen = true;
+				})
+				.catch((err) => {
+					console.warn('Failed to enter fullscreen:', err);
+				});
+		} else {
+			document
+				.exitFullscreen()
+				.then(() => {
+					isFullScreen = false;
+				})
+				.catch((err) => {
+					console.warn('Failed to exit fullscreen:', err);
+				});
+		}
+	}
+
+	// Listen for fullscreen changes (e.g., ESC key)
+	$effect(() => {
+		function handleFullscreenChange(): void {
+			isFullScreen = !!document.fullscreenElement;
+		}
+
+		document.addEventListener('fullscreenchange', handleFullscreenChange);
+		return () => {
+			document.removeEventListener('fullscreenchange', handleFullscreenChange);
+		};
+	});
 
 	// State variables using Svelte 5 runes
 	let sequenceData = $state<SequenceData | null>(null);
@@ -112,9 +150,8 @@
 
 	// Update prop states from engine
 	function updatePropStates(): void {
-		const states = engine.getPropStates();
-		blueProp = states.blueProp;
-		redProp = states.redProp;
+		blueProp = engine.getBluePropState();
+		redProp = engine.getRedPropState();
 	}
 
 	// Animation loop
@@ -305,6 +342,15 @@
 				>
 					{isDarkMode ? '☀️' : '🌙'}
 				</button>
+				<button
+					type="button"
+					class="fullscreen-toggle"
+					onclick={toggleFullScreen}
+					title={isFullScreen ? 'Exit full screen' : 'Enter full screen'}
+					aria-label={isFullScreen ? 'Exit full screen' : 'Enter full screen'}
+				>
+					{isFullScreen ? '⤓' : '⤢'}
+				</button>
 			</div>
 		</div>
 	</header>
@@ -346,14 +392,14 @@
 		</aside>
 
 		<!-- Resizable Splitter -->
-		<div
+		<button
+			type="button"
 			class="resize-handle"
 			class:resizing={isResizing}
 			onmousedown={handleResizeStart}
 			title="Drag to resize sidebar"
-			role="separator"
 			aria-label="Resize sidebar"
-		></div>
+		></button>
 
 		<!-- Right Main Area: Animator -->
 		<main class="main-content">
@@ -392,9 +438,52 @@
 				</div>
 			{:else}
 				<div class="welcome-message">
-					<div class="welcome-icon">🎭</div>
-					<h3>Welcome to Pictograph Animator</h3>
-					<p>Select a sequence from the library or upload your own to get started.</p>
+					<div class="welcome-content">
+						<div class="welcome-icon">🎭</div>
+						<h3>Welcome to Kinetic Alphabet</h3>
+						<p class="welcome-description">
+							Visualize flow art patterns and movements with interactive animations
+						</p>
+
+						<div class="getting-started">
+							<h4>🚀 Getting Started</h4>
+							<div class="steps">
+								<div class="step">
+									<span class="step-number">1</span>
+									<div class="step-content">
+										<strong>Browse Library</strong>
+										<p>Click the 📚 tab to explore pre-made sequences</p>
+									</div>
+								</div>
+								<div class="step">
+									<span class="step-number">2</span>
+									<div class="step-content">
+										<strong>Upload Files</strong>
+										<p>Click the 📁 tab to import PNG images or paste JSON data</p>
+									</div>
+								</div>
+								<div class="step">
+									<span class="step-number">3</span>
+									<div class="step-content">
+										<strong>Watch & Learn</strong>
+										<p>Use playback controls to study movement patterns</p>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="features-preview">
+							<h4>✨ Features</h4>
+							<div class="feature-list">
+								<div class="feature">🎯 Interactive Canvas</div>
+								<div class="feature">⚡ Variable Speed Control</div>
+								<div class="feature">🔄 Loop Animations</div>
+								<div class="feature">🌙 Dark/Light Themes</div>
+								<div class="feature">📱 Mobile Responsive</div>
+								<div class="feature">🎨 Visual Progress Tracking</div>
+							</div>
+						</div>
+					</div>
 				</div>
 			{/if}
 		</main>
@@ -402,6 +491,39 @@
 </div>
 
 <style>
+	/* Global Mobile-First Reset */
+	:global(html, body) {
+		margin: 0;
+		padding: 0;
+		width: 100%;
+		height: 100%;
+		overflow-x: hidden;
+		-webkit-text-size-adjust: 100%;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+	}
+
+	:global(body) {
+		font-family:
+			system-ui,
+			-apple-system,
+			'Segoe UI',
+			Roboto,
+			sans-serif;
+		line-height: 1.5;
+	}
+
+	:global(#svelte) {
+		width: 100%;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+	}
+
+	:global(*) {
+		box-sizing: border-box;
+	}
+
 	/* CSS Variables for Light and Dark Themes */
 	:global(:root) {
 		/* Light theme (default) */
@@ -443,10 +565,13 @@
 
 	.animator-app {
 		height: 100vh;
+		height: 100dvh; /* Use dynamic viewport height for mobile */
 		display: flex;
 		flex-direction: column;
 		background: var(--color-background);
 		transition: background-color 0.3s ease;
+		overflow: hidden; /* Prevent body scroll on mobile */
+		position: relative;
 	}
 
 	.app-header {
@@ -468,58 +593,77 @@
 	.header-branding {
 		display: flex;
 		align-items: center;
-		gap: 1rem;
+		gap: 0.75rem;
+		min-width: 0; /* Allow branding to shrink */
+		flex: 1;
 	}
 
 	.header-icon {
-		font-size: 2.5rem;
+		font-size: 2rem;
 		filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+		flex-shrink: 0;
+	}
+
+	.header-text {
+		min-width: 0; /* Allow text to shrink */
+		overflow: hidden;
 	}
 
 	.header-text h1 {
 		margin: 0;
-		font-size: 1.75rem;
+		font-size: 1.5rem;
 		font-weight: 700;
 		color: var(--color-primary);
 		line-height: 1.2;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	.header-subtitle {
 		margin: 0;
-		font-size: 0.9rem;
+		font-size: 0.8rem;
 		color: var(--color-text-secondary);
 		font-weight: 500;
 		letter-spacing: 0.5px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	.header-controls {
 		display: flex;
 		align-items: center;
-		gap: 1rem;
+		gap: 0.5rem;
+		flex-shrink: 0;
 	}
 
-	.theme-toggle {
+	.theme-toggle,
+	.fullscreen-toggle {
 		background: var(--color-background);
 		border: 1px solid var(--color-border);
 		border-radius: 50%;
-		width: 44px;
-		height: 44px;
+		width: 40px;
+		height: 40px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
-		font-size: 1.2rem;
+		font-size: 1.1rem;
 		transition: all 0.2s ease;
 		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+		color: var(--color-text-primary);
 	}
 
-	.theme-toggle:hover {
+	.theme-toggle:hover,
+	.fullscreen-toggle:hover {
 		background: var(--color-surface-hover);
 		transform: translateY(-1px);
 		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 	}
 
-	.theme-toggle:active {
+	.theme-toggle:active,
+	.fullscreen-toggle:active {
 		transform: translateY(0);
 	}
 
@@ -687,31 +831,145 @@
 	.welcome-message {
 		flex: 1;
 		display: flex;
-		flex-direction: column;
 		align-items: center;
 		justify-content: center;
+		padding: 2rem;
+		overflow-y: auto;
+	}
+
+	.welcome-content {
+		max-width: 600px;
+		width: 100%;
 		text-align: center;
-		padding: 4rem 2rem;
 		color: var(--color-text-secondary);
 	}
 
 	.welcome-icon {
 		font-size: 4rem;
-		margin-bottom: 1rem;
-		opacity: 0.7;
+		margin-bottom: 1.5rem;
+		opacity: 0.8;
+		filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 	}
 
-	.welcome-message h3 {
+	.welcome-content h3 {
 		margin: 0 0 1rem;
-		font-size: 1.5rem;
-		color: var(--color-text-primary);
+		font-size: 2rem;
+		font-weight: 700;
+		color: var(--color-primary);
+		letter-spacing: -0.025em;
 	}
 
-	.welcome-message p {
-		margin: 0;
+	.welcome-description {
+		margin: 0 0 2.5rem;
+		font-size: 1.2rem;
+		line-height: 1.6;
+		color: var(--color-text-primary);
+		opacity: 0.9;
+	}
+
+	.getting-started {
+		margin-bottom: 2.5rem;
+		text-align: left;
+	}
+
+	.getting-started h4 {
+		margin: 0 0 1.5rem;
+		font-size: 1.3rem;
+		font-weight: 600;
+		color: var(--color-text-primary);
+		text-align: center;
+	}
+
+	.steps {
+		display: flex;
+		flex-direction: column;
+		gap: 1.25rem;
+	}
+
+	.step {
+		display: flex;
+		align-items: flex-start;
+		gap: 1rem;
+		padding: 1.25rem;
+		background: var(--color-surface);
+		border-radius: 12px;
+		border: 1px solid var(--color-border);
+		transition: all 0.3s ease;
+	}
+
+	.step:hover {
+		background: var(--color-surface-hover);
+		border-color: var(--color-primary);
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	}
+
+	.step-number {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 32px;
+		height: 32px;
+		background: var(--color-primary);
+		color: white;
+		border-radius: 50%;
+		font-weight: 700;
+		font-size: 0.9rem;
+		flex-shrink: 0;
+	}
+
+	.step-content {
+		flex: 1;
+	}
+
+	.step-content strong {
+		display: block;
+		margin-bottom: 0.5rem;
 		font-size: 1.1rem;
-		max-width: 400px;
+		color: var(--color-text-primary);
+		font-weight: 600;
+	}
+
+	.step-content p {
+		margin: 0;
+		font-size: 0.95rem;
 		line-height: 1.5;
+		color: var(--color-text-secondary);
+	}
+
+	.features-preview {
+		text-align: left;
+	}
+
+	.features-preview h4 {
+		margin: 0 0 1.5rem;
+		font-size: 1.3rem;
+		font-weight: 600;
+		color: var(--color-text-primary);
+		text-align: center;
+	}
+
+	.feature-list {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+		gap: 0.75rem;
+	}
+
+	.feature {
+		padding: 0.75rem 1rem;
+		background: var(--color-surface);
+		border-radius: 8px;
+		border: 1px solid var(--color-border);
+		font-weight: 500;
+		color: var(--color-text-primary);
+		text-align: center;
+		transition: all 0.2s ease;
+	}
+
+	.feature:hover {
+		background: var(--color-surface-hover);
+		border-color: var(--color-primary);
+		transform: translateY(-1px);
 	}
 
 	/* Responsive Design */
@@ -764,112 +1022,226 @@
 		}
 	}
 
-	/* Mobile Layout */
+	/* Mobile Layout - Complete Redesign */
 	@media (max-width: 768px) {
+		.animator-app {
+			height: 100vh;
+			height: 100dvh; /* Use dynamic viewport height */
+			overflow: hidden;
+		}
+
 		.app-header {
-			padding: 1rem;
+			padding: 0.75rem 1rem;
+			min-height: auto;
+			flex-shrink: 0;
+		}
+
+		.header-content {
+			min-width: 0;
 		}
 
 		.header-branding {
-			gap: 0.75rem;
+			gap: 0.5rem;
+			min-width: 0;
 		}
 
 		.header-icon {
-			font-size: 2rem;
+			font-size: 1.75rem;
 		}
 
 		.header-text h1 {
-			font-size: 1.5rem;
+			font-size: 1.25rem;
+			line-height: 1.1;
 		}
 
 		.header-subtitle {
-			font-size: 0.8rem;
+			font-size: 0.7rem;
+			display: none; /* Hide subtitle on very small screens */
 		}
 
-		.theme-toggle {
-			width: 40px;
-			height: 40px;
-			font-size: 1.1rem;
+		.header-controls {
+			gap: 0.25rem;
+		}
+
+		.theme-toggle,
+		.fullscreen-toggle {
+			width: 36px;
+			height: 36px;
+			font-size: 1rem;
+		}
+
+		.app-layout {
+			flex-direction: column;
+			height: calc(100vh - 60px); /* Account for header */
+			height: calc(100dvh - 60px);
 		}
 
 		.sidebar {
-			height: 50vh;
-			max-height: 400px;
+			width: 100% !important;
+			height: 60vh; /* Increased from 50vh for better browsing */
+			max-height: none;
+			border-right: none;
+			border-bottom: 1px solid var(--color-border);
+			min-width: unset;
+			max-width: unset;
+			overflow: hidden;
 		}
 
 		.sidebar-header {
-			padding: 1rem;
+			padding: 0.75rem 1rem;
+			min-height: auto;
 		}
 
 		.sidebar-header h2 {
-			font-size: 1.1rem;
+			font-size: 1rem;
+		}
+
+		.sidebar-content {
+			flex: 1;
+			overflow: hidden;
 		}
 
 		.main-content {
-			height: 50vh;
-			min-height: 350px;
+			height: 40vh; /* Reduced to give more space to sidebar */
+			min-height: 200px;
+			overflow: hidden;
 		}
 
 		.animator-section {
-			padding: 1rem;
-			gap: 1rem;
+			padding: 0.75rem;
+			gap: 0.75rem;
+			height: 100%;
+			overflow-y: auto;
 		}
 
 		.canvas-container {
-			padding: 1rem;
-			min-height: 250px;
+			padding: 0.75rem;
+			min-height: 180px;
+			flex: 1;
 		}
 
 		.welcome-message {
-			padding: 2rem 1rem;
+			padding: 1rem;
+			height: 100%;
+			overflow-y: auto;
+		}
+
+		.welcome-content {
+			max-width: 100%;
 		}
 
 		.welcome-icon {
-			font-size: 3rem;
+			font-size: 2.5rem;
 		}
 
-		.welcome-message h3 {
+		.welcome-content h3 {
 			font-size: 1.25rem;
 		}
 
-		.welcome-message p {
+		.welcome-description {
 			font-size: 1rem;
+			margin-bottom: 1.5rem;
+		}
+
+		.getting-started h4 {
+			font-size: 1.1rem;
+			margin-bottom: 1rem;
+		}
+
+		.steps {
+			gap: 1rem;
+		}
+
+		.step {
+			padding: 1rem;
+		}
+
+		.step-number {
+			width: 28px;
+			height: 28px;
+			font-size: 0.8rem;
+		}
+
+		.step-content strong {
+			font-size: 1rem;
+		}
+
+		.step-content p {
+			font-size: 0.9rem;
+		}
+
+		.features-preview h4 {
+			font-size: 1.1rem;
+			margin-bottom: 1rem;
+		}
+
+		.feature-list {
+			grid-template-columns: 1fr;
+			gap: 0.5rem;
+		}
+
+		.feature {
+			padding: 0.5rem 0.75rem;
+			font-size: 0.9rem;
 		}
 	}
 
 	/* Small Mobile Layout */
 	@media (max-width: 480px) {
 		.header-text h1 {
-			font-size: 1.25rem;
+			font-size: 1.1rem;
 		}
 
 		.header-subtitle {
-			font-size: 0.75rem;
+			display: none; /* Hide completely on very small screens */
 		}
 
-		.theme-toggle {
-			width: 36px;
-			height: 36px;
-			font-size: 1rem;
+		.header-controls {
+			gap: 0.25rem;
+		}
+
+		.theme-toggle,
+		.fullscreen-toggle {
+			width: 32px;
+			height: 32px;
+			font-size: 0.9rem;
 		}
 
 		.sidebar {
-			height: 45vh;
-			max-height: 350px;
+			height: 65vh; /* Even more space for browsing on small screens */
 		}
 
 		.main-content {
-			height: 55vh;
-			min-height: 300px;
+			height: 35vh;
+			min-height: 180px;
 		}
 
 		.animator-section {
-			padding: 0.75rem;
+			padding: 0.5rem;
+			gap: 0.5rem;
 		}
 
 		.canvas-container {
+			padding: 0.5rem;
+			min-height: 150px;
+		}
+
+		.welcome-content h3 {
+			font-size: 1.1rem;
+		}
+
+		.welcome-description {
+			font-size: 0.9rem;
+		}
+
+		.step {
 			padding: 0.75rem;
-			min-height: 200px;
+		}
+
+		.step-number {
+			width: 24px;
+			height: 24px;
+			font-size: 0.75rem;
 		}
 	}
 </style>

@@ -236,7 +236,7 @@
 		display: grid;
 		grid-template-columns: repeat(2, 1fr);
 		grid-auto-rows: min-content;
-		gap: 1rem;
+		gap: 0.75rem;
 		padding: 0.75rem;
 		flex: 1;
 		overflow-y: auto;
@@ -265,7 +265,7 @@
 		background: var(--color-text-secondary, #666);
 	}
 
-	/* Responsive adjustments */
+	/* Responsive Design */
 	@media (max-width: 1024px) {
 		.thumbnail-grid {
 			grid-template-columns: repeat(3, 1fr);
@@ -278,20 +278,36 @@
 		.error-state,
 		.empty-state {
 			padding: 2rem 1rem;
+			min-height: 150px;
 		}
 
 		.thumbnail-grid {
 			grid-template-columns: repeat(2, 1fr);
-			gap: 0.75rem;
+			gap: 0.5rem;
 			padding: 0.5rem;
+		}
+
+		.results-info {
+			margin-bottom: 1rem;
+			padding: 0 0.5rem;
+		}
+
+		.results-count {
+			font-size: 0.85rem;
 		}
 	}
 
 	@media (max-width: 480px) {
 		.thumbnail-grid {
-			grid-template-columns: 1fr;
+			grid-template-columns: 1fr; /* Single column on very small screens */
 			gap: 0.75rem;
-			padding: 0.5rem;
+			padding: 0.75rem;
+		}
+
+		.loading-state,
+		.error-state,
+		.empty-state {
+			padding: 1.5rem 1rem;
 		}
 	}
 </style>
