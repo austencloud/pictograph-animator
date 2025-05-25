@@ -20,6 +20,11 @@
 	let searchQuery = $state('');
 	let selectedCategory = $state('All');
 
+	// Scroll indicator state
+	let gridElement: HTMLDivElement | null = $state(null);
+	let scrollProgress = $state(0);
+	let showScrollIndicator = $state(false);
+
 	// Services
 	const dictionaryService = DictionaryService.getInstance();
 
@@ -94,6 +99,18 @@
 	function handleRefresh(): void {
 		loadDictionary();
 	}
+
+	function handleScroll(event: Event): void {
+		const target = event.target as HTMLDivElement;
+		const { scrollTop, scrollHeight, clientHeight } = target;
+
+		// Calculate scroll progress (0 to 1)
+		const maxScroll = scrollHeight - clientHeight;
+		scrollProgress = maxScroll > 0 ? scrollTop / maxScroll : 0;
+
+		// Show indicator if there's content to scroll
+		showScrollIndicator = maxScroll > 10;
+	}
 </script>
 
 <div class="thumbnail-browser">
@@ -137,10 +154,30 @@
 			</span>
 		</div>
 
-		<div class="thumbnail-grid" role="grid" aria-label="Sequence thumbnails">
-			{#each filteredItems as item (item.id)}
-				<ThumbnailCard {item} onSelect={() => handleItemSelect(item)} />
-			{/each}
+		<div class="grid-container">
+			<!-- Scroll progress indicator -->
+			{#if showScrollIndicator}
+				<div class="scroll-indicator">
+					<div class="scroll-progress" style="width: {scrollProgress * 100}%"></div>
+				</div>
+			{/if}
+
+			<div
+				class="thumbnail-grid"
+				role="grid"
+				aria-label="Sequence thumbnails"
+				bind:this={gridElement}
+				onscroll={handleScroll}
+			>
+				{#each filteredItems as item (item.id)}
+					<ThumbnailCard {item} onSelect={() => handleItemSelect(item)} />
+				{/each}
+			</div>
+
+			<!-- Bottom fade indicator -->
+			{#if showScrollIndicator && scrollProgress < 0.95}
+				<div class="scroll-fade"></div>
+			{/if}
 		</div>
 	{/if}
 </div>
@@ -230,6 +267,43 @@
 	.results-count {
 		color: var(--color-text-secondary, #666);
 		font-size: 0.9rem;
+	}
+
+	.grid-container {
+		position: relative;
+		flex: 1;
+		min-height: 0;
+	}
+
+	/* Scroll indicators */
+	.scroll-indicator {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 3px;
+		background: var(--color-surface);
+		z-index: 10;
+		border-radius: 0 0 2px 2px;
+	}
+
+	.scroll-progress {
+		height: 100%;
+		background: var(--color-primary);
+		border-radius: 0 0 2px 2px;
+		transition: width 0.1s ease;
+	}
+
+	.scroll-fade {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		height: 20px;
+		background: linear-gradient(transparent, var(--color-background));
+		pointer-events: none;
+		z-index: 5;
+		border-radius: 0 0 8px 8px;
 	}
 
 	.thumbnail-grid {

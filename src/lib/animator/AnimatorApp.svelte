@@ -4,6 +4,12 @@
 	import { AnimatorErrorHandler } from './utils/error/error-handler.js';
 	import { InputValidator } from './utils/validation/input-validator.js';
 
+	// Import Lucide icons
+	import Maximize2 from 'lucide-svelte/icons/maximize-2';
+	import Minimize2 from 'lucide-svelte/icons/minimize-2';
+	import Sun from 'lucide-svelte/icons/sun';
+	import Moon from 'lucide-svelte/icons/moon';
+
 	// Import subcomponents from new architecture
 	import ThumbnailBrowser from './components/browser/ThumbnailBrowser.svelte';
 	import SequenceInput from './components/input/SequenceInput.svelte';
@@ -76,6 +82,10 @@
 	let activeTab = $state<'browser' | 'upload'>('browser');
 	let selectedItem = $state<DictionaryItem | null>(null);
 	let isDarkMode = $state(false);
+
+	// Sticky animation viewer state
+	let isAnimationSticky = $state(false);
+	let animationContainer: HTMLDivElement | null = $state(null);
 
 	// Resizable sidebar state
 	let sidebarWidth = $state(480);
@@ -278,6 +288,14 @@
 		}
 	}
 
+	function toggleStickyAnimation(): void {
+		isAnimationSticky = !isAnimationSticky;
+	}
+
+	function closeStickyAnimation(): void {
+		isAnimationSticky = false;
+	}
+
 	// Initialize theme from localStorage
 	$effect(() => {
 		if (typeof window !== 'undefined') {
@@ -328,7 +346,7 @@
 			<div class="header-branding">
 				<div class="header-icon">🎭</div>
 				<div class="header-text">
-					<h1>Kinetic Alphabet</h1>
+					<h1>The Kinetic Alphabet</h1>
 					<p class="header-subtitle">Sequence Animation Tool</p>
 				</div>
 			</div>
@@ -340,27 +358,52 @@
 					title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
 					aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
 				>
-					{isDarkMode ? '☀️' : '🌙'}
+					{#if isDarkMode}
+						<Sun size={20} />
+					{:else}
+						<Moon size={20} />
+					{/if}
 				</button>
+				<!-- Desktop full-screen button -->
 				<button
 					type="button"
-					class="fullscreen-toggle"
+					class="fullscreen-toggle desktop-only"
 					onclick={toggleFullScreen}
 					title={isFullScreen ? 'Exit full screen' : 'Enter full screen'}
 					aria-label={isFullScreen ? 'Exit full screen' : 'Enter full screen'}
 				>
-					{isFullScreen ? '⤓' : '⤢'}
+					{#if isFullScreen}
+						<Minimize2 size={20} />
+					{:else}
+						<Maximize2 size={20} />
+					{/if}
 				</button>
 			</div>
 		</div>
 	</header>
+
+	<!-- Mobile floating full-screen button -->
+	<button
+		type="button"
+		class="floating-fullscreen-btn mobile-only"
+		onclick={toggleFullScreen}
+		title={isFullScreen ? 'Exit full screen' : 'Enter full screen'}
+		aria-label={isFullScreen ? 'Exit full screen' : 'Enter full screen'}
+	>
+		{#if isFullScreen}
+			<Minimize2 size={24} />
+		{:else}
+			<Maximize2 size={24} />
+		{/if}
+	</button>
 
 	<div class="app-layout">
 		<!-- Left Sidebar: Sequence Browser -->
 		<aside class="sidebar" style="width: {sidebarWidth}px;">
 			<div class="sidebar-header">
 				<h2>Sequence Library</h2>
-				<div class="input-toggle">
+				<!-- Desktop only: Upload/JSON input toggle -->
+				<div class="input-toggle desktop-only">
 					<button
 						type="button"
 						class="toggle-button"
@@ -383,11 +426,17 @@
 			</div>
 
 			<div class="sidebar-content">
-				{#if activeTab === 'browser'}
+				<!-- Mobile: Always show browser, Desktop: Show based on active tab -->
+				<div class="mobile-only">
 					<ThumbnailBrowser onSequenceSelected={handleSequenceSelected} />
-				{:else}
-					<SequenceInput onSequenceLoaded={handleLoadSequence} />
-				{/if}
+				</div>
+				<div class="desktop-only">
+					{#if activeTab === 'browser'}
+						<ThumbnailBrowser onSequenceSelected={handleSequenceSelected} />
+					{:else}
+						<SequenceInput onSequenceLoaded={handleLoadSequence} />
+					{/if}
+				</div>
 			</div>
 		</aside>
 
@@ -413,10 +462,33 @@
 							{#if selectedItem.metadata.author}
 								<p>by {selectedItem.metadata.author}</p>
 							{/if}
+							<!-- Mobile sticky animation toggle -->
+							<button
+								type="button"
+								class="sticky-toggle mobile-only"
+								onclick={toggleStickyAnimation}
+								aria-label="Toggle sticky animation viewer"
+							>
+								{isAnimationSticky ? 'Exit Sticky View' : 'Sticky View'}
+							</button>
 						</div>
 					{/if}
 
-					<div class="canvas-container">
+					<div
+						class="canvas-container"
+						class:sticky={isAnimationSticky}
+						bind:this={animationContainer}
+					>
+						{#if isAnimationSticky}
+							<button
+								type="button"
+								class="close-sticky"
+								onclick={closeStickyAnimation}
+								aria-label="Close sticky view"
+							>
+								✕
+							</button>
+						{/if}
 						<AnimatorCanvas {blueProp} {redProp} width={canvasWidth} height={canvasHeight} />
 					</div>
 
@@ -437,53 +509,9 @@
 					<AnimatorInfo {currentBeat} {speed} {totalBeats} {sequenceWord} {sequenceAuthor} />
 				</div>
 			{:else}
-				<div class="welcome-message">
-					<div class="welcome-content">
-						<div class="welcome-icon">🎭</div>
-						<h3>Welcome to Kinetic Alphabet</h3>
-						<p class="welcome-description">
-							Visualize flow art patterns and movements with interactive animations
-						</p>
-
-						<div class="getting-started">
-							<h4>🚀 Getting Started</h4>
-							<div class="steps">
-								<div class="step">
-									<span class="step-number">1</span>
-									<div class="step-content">
-										<strong>Browse Library</strong>
-										<p>Click the 📚 tab to explore pre-made sequences</p>
-									</div>
-								</div>
-								<div class="step">
-									<span class="step-number">2</span>
-									<div class="step-content">
-										<strong>Upload Files</strong>
-										<p>Click the 📁 tab to import PNG images or paste JSON data</p>
-									</div>
-								</div>
-								<div class="step">
-									<span class="step-number">3</span>
-									<div class="step-content">
-										<strong>Watch & Learn</strong>
-										<p>Use playback controls to study movement patterns</p>
-									</div>
-								</div>
-							</div>
-						</div>
-
-						<div class="features-preview">
-							<h4>✨ Features</h4>
-							<div class="feature-list">
-								<div class="feature">🎯 Interactive Canvas</div>
-								<div class="feature">⚡ Variable Speed Control</div>
-								<div class="feature">🔄 Loop Animations</div>
-								<div class="feature">🌙 Dark/Light Themes</div>
-								<div class="feature">📱 Mobile Responsive</div>
-								<div class="feature">🎨 Visual Progress Tracking</div>
-							</div>
-						</div>
-					</div>
+				<!-- Minimal placeholder when no sequence is selected -->
+				<div class="minimal-placeholder">
+					<p>Select a sequence from the library to begin animation</p>
 				</div>
 			{/if}
 		</main>
@@ -542,6 +570,12 @@
 		/* Grid colors for light theme */
 		--color-grid-point: #000000;
 		--color-grid-center: #000000;
+
+		/* Header gradients and shadows */
+		--header-gradient: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+		--header-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);
+		--fab-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+		--fab-backdrop: rgba(255, 255, 255, 0.9);
 	}
 
 	:global([data-theme='dark']) {
@@ -561,6 +595,12 @@
 		/* Grid colors for dark theme */
 		--color-grid-point: #ffffff;
 		--color-grid-center: #ffffff;
+
+		/* Header gradients and shadows for dark theme */
+		--header-gradient: linear-gradient(135deg, #4dabf7 0%, #339af0 100%);
+		--header-shadow: 0 2px 8px rgba(77, 171, 247, 0.2);
+		--fab-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+		--fab-backdrop: rgba(42, 42, 42, 0.9);
 	}
 
 	.animator-app {
@@ -575,11 +615,14 @@
 	}
 
 	.app-header {
-		background: var(--color-surface);
-		border-bottom: 1px solid var(--color-border);
+		background: var(--header-gradient);
+		border-bottom: none;
+		box-shadow: var(--header-shadow);
 		padding: 1rem 2rem;
 		flex-shrink: 0;
 		transition: all 0.3s ease;
+		position: relative;
+		z-index: 100;
 	}
 
 	.header-content {
@@ -613,22 +656,25 @@
 		margin: 0;
 		font-size: 1.5rem;
 		font-weight: 700;
-		color: var(--color-primary);
+		color: white;
 		line-height: 1.2;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+		letter-spacing: -0.025em;
 	}
 
 	.header-subtitle {
 		margin: 0;
 		font-size: 0.8rem;
-		color: var(--color-text-secondary);
+		color: rgba(255, 255, 255, 0.9);
 		font-weight: 500;
 		letter-spacing: 0.5px;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 	}
 
 	.header-controls {
@@ -640,8 +686,8 @@
 
 	.theme-toggle,
 	.fullscreen-toggle {
-		background: var(--color-background);
-		border: 1px solid var(--color-border);
+		background: rgba(255, 255, 255, 0.15);
+		border: 1px solid rgba(255, 255, 255, 0.2);
 		border-radius: 50%;
 		width: 40px;
 		height: 40px;
@@ -651,20 +697,114 @@
 		cursor: pointer;
 		font-size: 1.1rem;
 		transition: all 0.2s ease;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-		color: var(--color-text-primary);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		color: white;
+		backdrop-filter: blur(10px);
 	}
 
 	.theme-toggle:hover,
 	.fullscreen-toggle:hover {
-		background: var(--color-surface-hover);
+		background: rgba(255, 255, 255, 0.25);
+		border-color: rgba(255, 255, 255, 0.3);
 		transform: translateY(-1px);
-		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 	}
 
 	.theme-toggle:active,
 	.fullscreen-toggle:active {
 		transform: translateY(0);
+	}
+
+	/* Mobile/Desktop Visibility Classes */
+	.mobile-only {
+		display: none;
+	}
+
+	.desktop-only {
+		display: block;
+	}
+
+	/* Floating Action Button */
+	.floating-fullscreen-btn {
+		position: fixed;
+		bottom: 16px;
+		right: 16px;
+		width: 56px;
+		height: 56px;
+		border-radius: 50%;
+		background: var(--fab-backdrop);
+		border: 1px solid var(--color-border);
+		box-shadow: var(--fab-shadow);
+		backdrop-filter: blur(10px);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		transition: all 0.3s ease;
+		z-index: 1000;
+		color: var(--color-text-primary);
+	}
+
+	.floating-fullscreen-btn:hover {
+		transform: scale(1.1);
+		box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+	}
+
+	.floating-fullscreen-btn:active {
+		transform: scale(0.95);
+	}
+
+	/* Sticky Animation Viewer */
+	.sticky-toggle {
+		margin-top: 0.5rem;
+		padding: 0.5rem 1rem;
+		background: var(--color-primary);
+		color: white;
+		border: none;
+		border-radius: 6px;
+		cursor: pointer;
+		font-size: 0.9rem;
+		transition: all 0.2s ease;
+	}
+
+	.sticky-toggle:hover {
+		background: var(--color-primary-dark, #1976d2);
+		transform: translateY(-1px);
+	}
+
+	.canvas-container.sticky {
+		position: sticky;
+		top: 16px;
+		z-index: 100;
+		background: var(--color-surface);
+		border: 2px solid var(--color-primary);
+		border-radius: 12px;
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+		margin-bottom: 1rem;
+	}
+
+	.close-sticky {
+		position: absolute;
+		top: 8px;
+		right: 8px;
+		width: 32px;
+		height: 32px;
+		background: rgba(0, 0, 0, 0.7);
+		color: white;
+		border: none;
+		border-radius: 50%;
+		cursor: pointer;
+		font-size: 1.2rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 10;
+		transition: all 0.2s ease;
+	}
+
+	.close-sticky:hover {
+		background: rgba(0, 0, 0, 0.9);
+		transform: scale(1.1);
 	}
 
 	.app-layout {
@@ -738,9 +878,10 @@
 
 	.sidebar-content {
 		flex: 1;
-		overflow: hidden;
+		overflow-y: auto;
 		display: flex;
 		flex-direction: column;
+		min-height: 0;
 	}
 
 	/* Resize Handle */
@@ -779,6 +920,8 @@
 		min-width: 0; /* Important for flex children to shrink */
 		background: var(--color-background);
 		transition: background-color 0.3s ease;
+		overflow-y: auto;
+		min-height: 0;
 	}
 
 	.animator-section {
@@ -813,6 +956,21 @@
 		font-style: italic;
 	}
 
+	.minimal-placeholder {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 2rem;
+		text-align: center;
+	}
+
+	.minimal-placeholder p {
+		color: var(--color-text-secondary);
+		font-size: 1.1rem;
+		margin: 0;
+	}
+
 	.canvas-container {
 		display: flex;
 		justify-content: center;
@@ -826,29 +984,6 @@
 		width: 100%;
 		max-width: none;
 		transition: all 0.3s ease;
-	}
-
-	.welcome-message {
-		flex: 1;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 2rem;
-		overflow-y: auto;
-	}
-
-	.welcome-content {
-		max-width: 600px;
-		width: 100%;
-		text-align: center;
-		color: var(--color-text-secondary);
-	}
-
-	.welcome-icon {
-		font-size: 4rem;
-		margin-bottom: 1.5rem;
-		opacity: 0.8;
-		filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 	}
 
 	.welcome-content h3 {
@@ -1024,6 +1159,15 @@
 
 	/* Mobile Layout - Complete Redesign */
 	@media (max-width: 768px) {
+		/* Mobile/Desktop Visibility */
+		.mobile-only {
+			display: block;
+		}
+
+		.desktop-only {
+			display: none;
+		}
+
 		.animator-app {
 			height: 100vh;
 			height: 100dvh; /* Use dynamic viewport height */
