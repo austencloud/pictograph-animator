@@ -164,15 +164,18 @@
 
 	.btn-reset {
 		background: var(--color-text-secondary);
+		color: var(--color-background); /* Ensure icon is visible in both themes */
 	}
 
 	.btn-reset:hover {
 		background: var(--color-text-secondary);
 		filter: brightness(0.9);
+		color: var(--color-background);
 	}
 
 	.icon {
 		font-size: 1.25rem;
+		color: inherit; /* Inherit color from parent button */
 	}
 
 	.speed-control {

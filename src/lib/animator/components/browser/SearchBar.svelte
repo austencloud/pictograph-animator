@@ -1,4 +1,11 @@
 <script lang="ts">
+	// Import Lucide icons
+	import RefreshCw from 'lucide-svelte/icons/refresh-cw';
+	import Search from 'lucide-svelte/icons/search';
+	import X from 'lucide-svelte/icons/x';
+	import ChevronDown from 'lucide-svelte/icons/chevron-down';
+	import ChevronUp from 'lucide-svelte/icons/chevron-up';
+
 	// Props
 	let {
 		searchQuery = '',
@@ -18,9 +25,20 @@
 		disabled?: boolean;
 	} = $props();
 
+	// Step count filter options
+	const stepFilters = [
+		{ id: 'all', label: 'All Steps', min: 0, max: Infinity },
+		{ id: 'quick', label: 'Quick (1-3)', min: 1, max: 3 },
+		{ id: 'short', label: 'Short (4-7)', min: 4, max: 7 },
+		{ id: 'medium', label: 'Medium (8-15)', min: 8, max: 15 },
+		{ id: 'long', label: 'Long (16+)', min: 16, max: Infinity }
+	];
+
 	// Local state for input handling
 	let searchInput = $state(searchQuery);
 	let isRefreshing = $state(false);
+	let isExpanded = $state(false);
+	let selectedStepFilter = $state('all');
 
 	// Sync with external searchQuery changes
 	$effect(() => {
@@ -64,12 +82,43 @@
 			isRefreshing = false;
 		}, 600);
 	}
+
+	function toggleExpanded(): void {
+		isExpanded = !isExpanded;
+	}
+
+	function handleStepFilterChange(filterId: string): void {
+		selectedStepFilter = filterId;
+		// For now, we'll just store the filter state
+		// In a real implementation, this would trigger filtering
+	}
 </script>
 
 <div class="search-bar">
-	<div class="search-controls">
+	<!-- Mobile: Collapsible search toggle -->
+	<div class="search-toggle mobile-only">
+		<button
+			type="button"
+			onclick={toggleExpanded}
+			class="toggle-button"
+			aria-label={isExpanded ? 'Collapse search' : 'Expand search'}
+		>
+			<Search size={16} />
+			<span>Search & Filter</span>
+			{#if isExpanded}
+				<ChevronUp size={16} />
+			{:else}
+				<ChevronDown size={16} />
+			{/if}
+		</button>
+	</div>
+
+	<!-- Search controls - always visible on desktop, collapsible on mobile -->
+	<div class="search-controls" class:expanded={isExpanded}>
 		<div class="search-input-container">
-			<div class="search-icon" aria-hidden="true">🔍</div>
+			<div class="search-icon" aria-hidden="true">
+				<Search size={16} />
+			</div>
 			<input
 				type="text"
 				placeholder="Search sequences by name, author, or word..."
@@ -87,7 +136,7 @@
 					class="clear-button"
 					aria-label="Clear search"
 				>
-					✕
+					<X size={14} />
 				</button>
 			{/if}
 		</div>
@@ -116,8 +165,26 @@
 				aria-label="Refresh library"
 				title="Refresh library"
 			>
-				<span class="refresh-icon">⟳</span>
+				<RefreshCw size={16} class={isRefreshing ? 'spinning' : ''} />
 			</button>
+		</div>
+
+		<!-- Step count filter chips -->
+		<div class="step-filters">
+			<div class="filter-chips">
+				{#each stepFilters as filter (filter.id)}
+					<button
+						type="button"
+						class="filter-chip"
+						class:active={selectedStepFilter === filter.id}
+						onclick={() => handleStepFilterChange(filter.id)}
+						{disabled}
+						aria-label={`Filter by ${filter.label}`}
+					>
+						{filter.label}
+					</button>
+				{/each}
+			</div>
 		</div>
 	</div>
 </div>
@@ -264,12 +331,14 @@
 		justify-content: center;
 		flex-shrink: 0;
 		margin-left: 0.5rem;
+		color: var(--color-text-primary);
 	}
 
 	.refresh-button:hover:not(:disabled) {
 		background: var(--color-surface-hover);
 		border-color: var(--color-primary);
 		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+		color: var(--color-primary);
 	}
 
 	.refresh-button:active:not(:disabled) {
@@ -281,14 +350,113 @@
 		opacity: 0.5;
 	}
 
-	.refresh-icon {
-		display: inline-block;
-		transition: transform 0.6s ease;
-		font-size: 1.1rem;
+	/* Mobile/Desktop Visibility Classes */
+	.mobile-only {
+		display: none;
 	}
 
-	.refresh-button.refreshing .refresh-icon {
-		transform: rotate(360deg);
+	/* Mobile search toggle */
+	.search-toggle {
+		margin-bottom: 0.5rem;
+	}
+
+	.search-toggle .toggle-button {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.75rem 1rem;
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: 8px;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		color: var(--color-text-primary);
+		font-weight: 500;
+		gap: 0.5rem;
+	}
+
+	.search-toggle .toggle-button:hover {
+		background: var(--color-surface-hover);
+		border-color: var(--color-primary);
+	}
+
+	/* Collapsible search controls */
+	.search-controls {
+		transition: all 0.3s ease;
+		overflow: hidden;
+	}
+
+	/* Step filter chips */
+	.step-filters {
+		margin-top: 0.75rem;
+		padding-top: 0.75rem;
+		border-top: 1px solid var(--color-border);
+	}
+
+	.filter-chips {
+		display: flex;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+		overflow-x: auto;
+		padding-bottom: 0.25rem;
+		scrollbar-width: none;
+		-ms-overflow-style: none;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.filter-chips::-webkit-scrollbar {
+		display: none;
+	}
+
+	.filter-chip {
+		padding: 0.5rem 1rem;
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: 20px;
+		cursor: pointer;
+		font-size: 0.85rem;
+		font-weight: 500;
+		color: var(--color-text-secondary);
+		transition: all 0.2s ease;
+		white-space: nowrap;
+		flex-shrink: 0;
+		min-height: 44px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.filter-chip:hover {
+		background: var(--color-surface-hover);
+		border-color: var(--color-primary);
+		color: var(--color-text-primary);
+	}
+
+	.filter-chip.active {
+		background: var(--color-primary);
+		border-color: var(--color-primary);
+		color: white;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	}
+
+	.filter-chip:disabled {
+		cursor: not-allowed;
+		opacity: 0.5;
+	}
+
+	/* Spinning animation for refresh icon */
+	:global(.spinning) {
+		animation: spin 0.6s linear;
+	}
+
+	@keyframes spin {
+		from {
+			transform: rotate(0deg);
+		}
+		to {
+			transform: rotate(360deg);
+		}
 	}
 
 	/* Responsive adjustments */
@@ -314,17 +482,72 @@
 	}
 
 	@media (max-width: 768px) {
-		.search-bar {
-			padding: 0.75rem;
+		/* Mobile/Desktop Visibility */
+		.mobile-only {
+			display: block;
 		}
 
+		/* Collapsible search on mobile */
 		.search-controls {
+			max-height: 0;
+			opacity: 0;
+			margin-bottom: 0;
+			padding: 0;
 			flex-direction: column;
 			gap: 0.5rem;
+			transition: all 0.3s ease;
+		}
+
+		.search-controls.expanded {
+			max-height: 200px;
+			opacity: 1;
+			margin-bottom: 0.75rem;
+			padding: 0.75rem;
+			background: var(--color-surface);
+			border: 1px solid var(--color-border);
+			border-radius: 8px;
+		}
+
+		.search-bar {
+			padding: 0.5rem;
+			margin-bottom: 0.5rem;
 		}
 
 		.search-input {
 			font-size: 16px; /* Prevent zoom on iOS */
+		}
+
+		.filter-container {
+			gap: 0.25rem;
+		}
+
+		.filter-label {
+			font-size: 0.8rem;
+		}
+
+		.category-filter {
+			font-size: 0.9rem;
+		}
+
+		.refresh-button {
+			width: 36px;
+			height: 36px;
+		}
+
+		/* Mobile filter chips - horizontal scroll */
+		.filter-chips {
+			flex-wrap: nowrap;
+			overflow-x: auto;
+			padding-right: 1rem;
+			margin-right: -1rem;
+			scroll-behavior: smooth;
+			-webkit-overflow-scrolling: touch;
+		}
+
+		.filter-chip {
+			font-size: 0.8rem;
+			padding: 0.4rem 0.8rem;
+			min-height: 40px;
 		}
 	}
 </style>
