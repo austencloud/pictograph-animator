@@ -70,20 +70,27 @@ export class AnimationEngine {
 
 	/**
 	 * Calculate prop states based on current beat
+	 *
+	 * Timing System:
+	 * - Beat 0: Start position (initial state)
+	 * - Beat 1 to totalBeats: Animation steps (each step gets full beat duration)
+	 * - Beat totalBeats+: Final step completion (holds final position)
+	 * - Start position is NOT counted as an animation frame
 	 */
 	calculateState(beat: number): void {
 		if (!this.sequenceData || this.steps.length === 0) {
 			return;
 		}
 
-		// Constrain beat to valid range
-		const constrainedBeat = Math.max(0, Math.min(beat, this.totalBeats));
+		// Allow beat to go beyond totalBeats for final step completion
+		// Constrain to reasonable range (0 to totalBeats+1)
+		const constrainedBeat = Math.max(0, Math.min(beat, this.totalBeats + 1));
 
 		// Get start position (index 1 in sequence data)
 		const startPosition = this.sequenceData[1] as SequenceStep;
 
 		if (constrainedBeat === 0) {
-			// At beat 0, use start position
+			// At beat 0, show start position (initial state)
 			this.calculatePropState(
 				this.bluePropState,
 				startPosition.blue_attributes,
@@ -99,31 +106,45 @@ export class AnimationEngine {
 			return;
 		}
 
-		// Find the current step based on beat number (1-based for animation steps)
+		// For beats 1 to totalBeats, show animation steps
+		// Beat 1.0 = start of first step, Beat 2.0 = start of second step, etc.
 		const stepIndex = Math.floor(constrainedBeat - 1);
-		const nextStepIndex = Math.min(stepIndex + 1, this.steps.length - 1);
+		const nextStepIndex = stepIndex + 1;
 
-		// Get t value (fraction within step)
+		// Get t value (fraction within current step, 0.0 to 1.0)
 		const t = constrainedBeat - 1 - stepIndex;
 
-		// Get current and next steps
+		// Get current and next steps for interpolation
 		let currentStep: SequenceStep;
 		let nextStep: SequenceStep;
 
 		if (stepIndex < 0) {
-			// Between start position and first animation step
+			// This shouldn't happen with our constraints, but handle gracefully
 			currentStep = startPosition;
 			nextStep = this.steps[0];
+		} else if (stepIndex >= this.steps.length) {
+			// At or past the end - show final step
+			const finalStep = this.steps[this.steps.length - 1];
+			currentStep = finalStep;
+			nextStep = finalStep;
 		} else {
+			// Normal case: interpolating between steps
 			currentStep = this.steps[stepIndex];
-			nextStep = this.steps[nextStepIndex];
+
+			if (nextStepIndex < this.steps.length) {
+				// Interpolate to next step
+				nextStep = this.steps[nextStepIndex];
+			} else {
+				// Last step - hold final position
+				nextStep = currentStep;
+			}
 		}
 
 		if (!currentStep || !nextStep) {
 			return;
 		}
 
-		// Calculate prop states
+		// Calculate prop states with interpolation
 		this.calculatePropState(
 			this.bluePropState,
 			currentStep.blue_attributes,

@@ -1,10 +1,10 @@
 <script lang="ts">
-	// Import Lucide icons
-	import RefreshCw from 'lucide-svelte/icons/refresh-cw';
-	import Search from 'lucide-svelte/icons/search';
-	import X from 'lucide-svelte/icons/x';
-	import ChevronDown from 'lucide-svelte/icons/chevron-down';
-	import ChevronUp from 'lucide-svelte/icons/chevron-up';
+	// Import new sub-components
+	import SearchToggle from './SearchToggle.svelte';
+	import SearchInput from './SearchInput.svelte';
+	import CategoryFilter from './CategoryFilter.svelte';
+	import StepFilters from './StepFilters.svelte';
+	import Upload from 'lucide-svelte/icons/upload';
 
 	// Props
 	let {
@@ -14,6 +14,7 @@
 		onSearchChange,
 		onCategoryChange,
 		onRefresh,
+		onJSONImport,
 		disabled = false
 	}: {
 		searchQuery: string;
@@ -22,66 +23,13 @@
 		onSearchChange?: (query: string) => void;
 		onCategoryChange?: (category: string) => void;
 		onRefresh?: () => void;
+		onJSONImport?: () => void;
 		disabled?: boolean;
 	} = $props();
 
-	// Step count filter options
-	const stepFilters = [
-		{ id: 'all', label: 'All Steps', min: 0, max: Infinity },
-		{ id: 'quick', label: 'Quick (1-3)', min: 1, max: 3 },
-		{ id: 'short', label: 'Short (4-7)', min: 4, max: 7 },
-		{ id: 'medium', label: 'Medium (8-15)', min: 8, max: 15 },
-		{ id: 'long', label: 'Long (16+)', min: 16, max: Infinity }
-	];
-
-	// Local state for input handling
-	let searchInput = $state(searchQuery);
-	let isRefreshing = $state(false);
+	// Local state
 	let isExpanded = $state(false);
 	let selectedStepFilter = $state('all');
-
-	// Sync with external searchQuery changes
-	$effect(() => {
-		searchInput = searchQuery;
-	});
-
-	// Debounced search handling
-	let searchTimeout: ReturnType<typeof setTimeout> | undefined;
-
-	function handleSearchInput(event: Event): void {
-		const target = event.target as HTMLInputElement;
-		searchInput = target.value;
-
-		// Clear existing timeout
-		if (searchTimeout) {
-			clearTimeout(searchTimeout);
-		}
-
-		// Debounce search to avoid excessive filtering
-		searchTimeout = setTimeout(() => {
-			onSearchChange?.(searchInput);
-		}, 300);
-	}
-
-	function handleCategorySelect(event: Event): void {
-		const target = event.target as HTMLSelectElement;
-		onCategoryChange?.(target.value);
-	}
-
-	function handleClearSearch(): void {
-		searchInput = '';
-		onSearchChange?.('');
-	}
-
-	function handleRefreshClick(): void {
-		isRefreshing = true;
-		onRefresh?.();
-
-		// Reset refreshing state after animation
-		setTimeout(() => {
-			isRefreshing = false;
-		}, 600);
-	}
 
 	function toggleExpanded(): void {
 		isExpanded = !isExpanded;
@@ -92,100 +40,36 @@
 		// For now, we'll just store the filter state
 		// In a real implementation, this would trigger filtering
 	}
+
+	function handleJSONImport(): void {
+		onJSONImport?.();
+	}
 </script>
 
 <div class="search-bar">
 	<!-- Mobile: Collapsible search toggle -->
-	<div class="search-toggle mobile-only">
-		<button
-			type="button"
-			onclick={toggleExpanded}
-			class="toggle-button"
-			aria-label={isExpanded ? 'Collapse search' : 'Expand search'}
-		>
-			<Search size={16} />
-			<span>Search & Filter</span>
-			{#if isExpanded}
-				<ChevronUp size={16} />
-			{:else}
-				<ChevronDown size={16} />
-			{/if}
-		</button>
-	</div>
+	<SearchToggle {isExpanded} onToggle={toggleExpanded} />
 
 	<!-- Search controls - always visible on desktop, collapsible on mobile -->
 	<div class="search-controls" class:expanded={isExpanded}>
-		<div class="search-input-container">
-			<div class="search-icon" aria-hidden="true">
-				<Search size={16} />
-			</div>
-			<input
-				type="text"
-				placeholder="Search sequences by name, author, or word..."
-				value={searchInput}
-				oninput={handleSearchInput}
-				{disabled}
-				class="search-input"
-				aria-label="Search sequences"
-			/>
-			{#if searchInput}
-				<button
-					type="button"
-					onclick={handleClearSearch}
-					{disabled}
-					class="clear-button"
-					aria-label="Clear search"
-				>
-					<X size={14} />
-				</button>
-			{/if}
-		</div>
+		<SearchInput {searchQuery} {onSearchChange} {disabled} />
 
-		<div class="filter-container">
-			<label for="category-filter" class="filter-label">Filter:</label>
-			<select
-				id="category-filter"
-				value={selectedCategory}
-				onchange={handleCategorySelect}
-				{disabled}
-				class="category-filter"
-				aria-label="Filter by category"
-			>
-				{#each categories as category}
-					<option value={category}>{category}</option>
-				{/each}
-			</select>
+		<CategoryFilter {selectedCategory} {categories} {onCategoryChange} {onRefresh} {disabled} />
 
-			<button
-				type="button"
-				onclick={handleRefreshClick}
-				{disabled}
-				class="refresh-button"
-				class:refreshing={isRefreshing}
-				aria-label="Refresh library"
-				title="Refresh library"
-			>
-				<RefreshCw size={16} class={isRefreshing ? 'spinning' : ''} />
-			</button>
-		</div>
+		<StepFilters {selectedStepFilter} onStepFilterChange={handleStepFilterChange} {disabled} />
 
-		<!-- Step count filter chips -->
-		<div class="step-filters">
-			<div class="filter-chips">
-				{#each stepFilters as filter (filter.id)}
-					<button
-						type="button"
-						class="filter-chip"
-						class:active={selectedStepFilter === filter.id}
-						onclick={() => handleStepFilterChange(filter.id)}
-						{disabled}
-						aria-label={`Filter by ${filter.label}`}
-					>
-						{filter.label}
-					</button>
-				{/each}
-			</div>
-		</div>
+		<!-- JSON Import Button -->
+		<button
+			type="button"
+			class="json-import-button"
+			onclick={handleJSONImport}
+			{disabled}
+			title="Import sequence from JSON data"
+			aria-label="Import JSON sequence"
+		>
+			<Upload size={16} />
+			Import JSON
+		</button>
 	</div>
 </div>
 
@@ -204,259 +88,39 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.75rem;
-	}
-
-	.search-input-container {
-		position: relative;
-		display: flex;
-		align-items: center;
-	}
-
-	.search-icon {
-		position: absolute;
-		left: 12px;
-		color: var(--color-text-secondary);
-		font-size: 1rem;
-		pointer-events: none;
-		z-index: 1;
-	}
-
-	.search-input {
-		width: 100%;
-		padding: 0.75rem 1rem 0.75rem 2.5rem;
-		border: 1px solid var(--color-border);
-		border-radius: 6px;
-		font-size: 1rem;
-		background: var(--color-surface);
-		color: var(--color-text-primary);
-		transition:
-			border-color 0.2s ease,
-			box-shadow 0.2s ease,
-			background-color 0.3s ease;
-	}
-
-	.search-input:focus {
-		outline: none;
-		border-color: var(--color-primary);
-		box-shadow: 0 0 0 3px var(--color-primary-alpha);
-	}
-
-	.search-input:disabled {
-		background: var(--color-surface-hover);
-		color: var(--color-text-secondary);
-		cursor: not-allowed;
-	}
-
-	.clear-button {
-		position: absolute;
-		right: 8px;
-		background: none;
-		border: none;
-		color: var(--color-text-secondary);
-		cursor: pointer;
-		padding: 4px;
-		border-radius: 4px;
-		font-size: 1rem;
-		line-height: 1;
-		transition:
-			background-color 0.2s ease,
-			color 0.2s ease;
-	}
-
-	.clear-button:hover:not(:disabled) {
-		background: var(--color-surface-hover);
-		color: var(--color-text-primary);
-	}
-
-	.clear-button:disabled {
-		cursor: not-allowed;
-		opacity: 0.5;
-	}
-
-	.filter-container {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	.filter-label {
-		font-size: 0.9rem;
-		font-weight: 500;
-		color: var(--color-text-secondary);
-		white-space: nowrap;
-	}
-
-	.category-filter {
-		padding: 0.75rem;
-		border: 1px solid var(--color-border);
-		border-radius: 6px;
-		font-size: 1rem;
-		background: var(--color-surface);
-		color: var(--color-text-primary);
-		cursor: pointer;
-		transition:
-			border-color 0.2s ease,
-			background-color 0.3s ease;
-		flex: 1;
-	}
-
-	.category-filter:focus {
-		outline: none;
-		border-color: var(--color-primary);
-		box-shadow: 0 0 0 3px var(--color-primary-alpha);
-	}
-
-	.category-filter:disabled {
-		background: var(--color-surface-hover);
-		color: var(--color-text-secondary);
-		cursor: not-allowed;
-	}
-
-	.refresh-button {
-		padding: 0.5rem;
-		background: var(--color-background);
-		border: 1px solid var(--color-border);
-		border-radius: 50%;
-		cursor: pointer;
-		font-size: 1rem;
-		line-height: 1;
-		transition:
-			background-color 0.2s ease,
-			border-color 0.2s ease,
-			box-shadow 0.2s ease;
-		width: 36px;
-		height: 36px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		flex-shrink: 0;
-		margin-left: 0.5rem;
-		color: var(--color-text-primary);
-	}
-
-	.refresh-button:hover:not(:disabled) {
-		background: var(--color-surface-hover);
-		border-color: var(--color-primary);
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-		color: var(--color-primary);
-	}
-
-	.refresh-button:active:not(:disabled) {
-		transform: scale(0.95);
-	}
-
-	.refresh-button:disabled {
-		cursor: not-allowed;
-		opacity: 0.5;
-	}
-
-	/* Mobile/Desktop Visibility Classes */
-	.mobile-only {
-		display: none;
-	}
-
-	/* Mobile search toggle */
-	.search-toggle {
-		margin-bottom: 0.5rem;
-	}
-
-	.search-toggle .toggle-button {
-		width: 100%;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 0.75rem 1rem;
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: 8px;
-		cursor: pointer;
-		transition: all 0.2s ease;
-		color: var(--color-text-primary);
-		font-weight: 500;
-		gap: 0.5rem;
-	}
-
-	.search-toggle .toggle-button:hover {
-		background: var(--color-surface-hover);
-		border-color: var(--color-primary);
-	}
-
-	/* Collapsible search controls */
-	.search-controls {
 		transition: all 0.3s ease;
 		overflow: hidden;
 	}
 
-	/* Step filter chips */
-	.step-filters {
-		margin-top: 0.75rem;
-		padding-top: 0.75rem;
-		border-top: 1px solid var(--color-border);
-	}
-
-	.filter-chips {
-		display: flex;
-		gap: 0.5rem;
-		flex-wrap: wrap;
-		overflow-x: auto;
-		padding-bottom: 0.25rem;
-		scrollbar-width: none;
-		-ms-overflow-style: none;
-		-webkit-overflow-scrolling: touch;
-	}
-
-	.filter-chips::-webkit-scrollbar {
-		display: none;
-	}
-
-	.filter-chip {
-		padding: 0.5rem 1rem;
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: 20px;
+	.json-import-button {
+		background: var(--color-primary);
+		border: 1px solid var(--color-primary);
+		color: white;
+		padding: 0.75rem 1rem;
+		border-radius: 6px;
 		cursor: pointer;
-		font-size: 0.85rem;
 		font-weight: 500;
-		color: var(--color-text-secondary);
+		font-size: 0.875rem;
 		transition: all 0.2s ease;
-		white-space: nowrap;
-		flex-shrink: 0;
-		min-height: 44px;
 		display: flex;
 		align-items: center;
+		gap: 0.5rem;
 		justify-content: center;
+		min-width: fit-content;
 	}
 
-	.filter-chip:hover {
-		background: var(--color-surface-hover);
-		border-color: var(--color-primary);
-		color: var(--color-text-primary);
+	.json-import-button:hover:not(:disabled) {
+		background: var(--color-primary-hover);
+		border-color: var(--color-primary-hover);
+		transform: translateY(-1px);
+		box-shadow: 0 4px 8px rgba(var(--color-primary-rgb), 0.3);
 	}
 
-	.filter-chip.active {
-		background: var(--color-primary);
-		border-color: var(--color-primary);
-		color: white;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-	}
-
-	.filter-chip:disabled {
+	.json-import-button:disabled {
+		opacity: 0.6;
 		cursor: not-allowed;
-		opacity: 0.5;
-	}
-
-	/* Spinning animation for refresh icon */
-	:global(.spinning) {
-		animation: spin 0.6s linear;
-	}
-
-	@keyframes spin {
-		from {
-			transform: rotate(0deg);
-		}
-		to {
-			transform: rotate(360deg);
-		}
+		transform: none;
+		box-shadow: none;
 	}
 
 	/* Responsive adjustments */
@@ -466,27 +130,9 @@
 			align-items: center;
 			gap: 0.75rem;
 		}
-
-		.search-input-container {
-			flex: 1;
-		}
-
-		.filter-container {
-			flex-shrink: 0;
-			min-width: 120px;
-		}
-
-		.refresh-button {
-			flex-shrink: 0;
-		}
 	}
 
 	@media (max-width: 768px) {
-		/* Mobile/Desktop Visibility */
-		.mobile-only {
-			display: block;
-		}
-
 		/* Collapsible search on mobile */
 		.search-controls {
 			max-height: 0;
@@ -511,43 +157,6 @@
 		.search-bar {
 			padding: 0.5rem;
 			margin-bottom: 0.5rem;
-		}
-
-		.search-input {
-			font-size: 16px; /* Prevent zoom on iOS */
-		}
-
-		.filter-container {
-			gap: 0.25rem;
-		}
-
-		.filter-label {
-			font-size: 0.8rem;
-		}
-
-		.category-filter {
-			font-size: 0.9rem;
-		}
-
-		.refresh-button {
-			width: 36px;
-			height: 36px;
-		}
-
-		/* Mobile filter chips - horizontal scroll */
-		.filter-chips {
-			flex-wrap: nowrap;
-			overflow-x: auto;
-			padding-right: 1rem;
-			margin-right: -1rem;
-			scroll-behavior: smooth;
-			-webkit-overflow-scrolling: touch;
-		}
-
-		.filter-chip {
-			font-size: 0.8rem;
-			padding: 0.4rem 0.8rem;
-			min-height: 40px;
 		}
 	}
 </style>

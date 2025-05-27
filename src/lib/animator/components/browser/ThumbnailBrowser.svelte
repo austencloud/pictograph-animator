@@ -1,8 +1,11 @@
 <script lang="ts">
 	import type { DictionaryItem, SequenceData } from '../../types/core.js';
 	import { DictionaryService } from '../../core/services/dictionary-service.js';
-	import ThumbnailCard from './ThumbnailCard.svelte';
 	import SearchBar from './SearchBar.svelte';
+	import BrowserStates from './BrowserStates.svelte';
+	import ResultsInfo from './ResultsInfo.svelte';
+	import VirtualThumbnailGrid from './VirtualThumbnailGrid.svelte';
+	import JSONImportModal from './JSONImportModal.svelte';
 
 	// Props
 	let {
@@ -19,11 +22,7 @@
 	let error = $state('');
 	let searchQuery = $state('');
 	let selectedCategory = $state('All');
-
-	// Scroll indicator state
-	let gridElement: HTMLDivElement | null = $state(null);
-	let scrollProgress = $state(0);
-	let showScrollIndicator = $state(false);
+	let isJSONModalOpen = $state(false);
 
 	// Services
 	const dictionaryService = DictionaryService.getInstance();
@@ -100,16 +99,32 @@
 		loadDictionary();
 	}
 
-	function handleScroll(event: Event): void {
-		const target = event.target as HTMLDivElement;
-		const { scrollTop, scrollHeight, clientHeight } = target;
+	function handleScroll(_event: Event): void {
+		// Scroll handling is now managed by VirtualThumbnailGrid component
+	}
 
-		// Calculate scroll progress (0 to 1)
-		const maxScroll = scrollHeight - clientHeight;
-		scrollProgress = maxScroll > 0 ? scrollTop / maxScroll : 0;
+	function handleJSONImport(): void {
+		isJSONModalOpen = true;
+	}
 
-		// Show indicator if there's content to scroll
-		showScrollIndicator = maxScroll > 10;
+	function handleJSONModalClose(): void {
+		isJSONModalOpen = false;
+	}
+
+	function handleJSONSequenceImport(data: SequenceData): void {
+		// Create a temporary DictionaryItem for the imported sequence
+		const tempItem: DictionaryItem = {
+			id: `imported-${Date.now()}`,
+			name: data[0]?.word || 'Imported Sequence',
+			filePath: '',
+			metadata: data[0] || {},
+			sequenceData: data,
+			versions: []
+		};
+
+		// Call the sequence selected handler
+		onSequenceSelected?.(data, tempItem);
+		isJSONModalOpen = false;
 	}
 </script>
 
@@ -121,267 +136,41 @@
 		onSearchChange={handleSearchChange}
 		onCategoryChange={handleCategoryChange}
 		onRefresh={handleRefresh}
+		onJSONImport={handleJSONImport}
 		disabled={isLoading}
 	/>
 
-	{#if isLoading}
-		<div class="loading-state">
-			<div class="spinner" aria-hidden="true"></div>
-			<p>Loading sequence library...</p>
-		</div>
-	{:else if error}
-		<div class="error-state">
-			<div class="error-icon" aria-hidden="true">⚠️</div>
-			<h3>Failed to Load Library</h3>
-			<p>{error}</p>
-			<button type="button" onclick={handleRefresh} class="retry-button"> Try Again </button>
-		</div>
-	{:else if filteredItems.length === 0}
-		<div class="empty-state">
-			<div class="empty-icon" aria-hidden="true">🔍</div>
-			<h3>No Sequences Found</h3>
-			<p>
-				{searchQuery || selectedCategory !== 'All'
-					? 'Try adjusting your search or filter criteria.'
-					: 'The sequence library appears to be empty.'}
-			</p>
-		</div>
-	{:else}
-		<div class="results-info">
-			<span class="results-count">
-				{filteredItems.length} sequence{filteredItems.length !== 1 ? 's' : ''}
-				{searchQuery || selectedCategory !== 'All' ? 'found' : 'available'}
-			</span>
-		</div>
+	<BrowserStates
+		{isLoading}
+		{error}
+		isEmpty={filteredItems.length === 0}
+		{searchQuery}
+		{selectedCategory}
+		onRetry={handleRefresh}
+	/>
 
-		<div class="grid-container">
-			<!-- Scroll progress indicator -->
-			{#if showScrollIndicator}
-				<div class="scroll-indicator">
-					<div class="scroll-progress" style="width: {scrollProgress * 100}%"></div>
-				</div>
-			{/if}
+	{#if !isLoading && !error && filteredItems.length > 0}
+		<ResultsInfo itemCount={filteredItems.length} {searchQuery} {selectedCategory} />
 
-			<div
-				class="thumbnail-grid"
-				role="grid"
-				aria-label="Sequence thumbnails"
-				bind:this={gridElement}
-				onscroll={handleScroll}
-			>
-				{#each filteredItems as item (item.id)}
-					<ThumbnailCard {item} onSelect={() => handleItemSelect(item)} />
-				{/each}
-			</div>
-
-			<!-- Bottom fade indicator -->
-			{#if showScrollIndicator && scrollProgress < 0.95}
-				<div class="scroll-fade"></div>
-			{/if}
-		</div>
+		<VirtualThumbnailGrid
+			items={filteredItems}
+			onItemSelect={handleItemSelect}
+			onScroll={handleScroll}
+		/>
 	{/if}
 </div>
+
+<!-- JSON Import Modal -->
+<JSONImportModal
+	isOpen={isJSONModalOpen}
+	onClose={handleJSONModalClose}
+	onImport={handleJSONSequenceImport}
+/>
 
 <style>
 	.thumbnail-browser {
 		height: 100%;
 		display: flex;
 		flex-direction: column;
-	}
-
-	.loading-state,
-	.error-state,
-	.empty-state {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		padding: 3rem 1.5rem;
-		text-align: center;
-		min-height: 200px;
-		flex: 1;
-	}
-
-	.spinner {
-		width: 40px;
-		height: 40px;
-		border: 4px solid var(--color-border, #e0e0e0);
-		border-top: 4px solid var(--color-primary, #2196f3);
-		border-radius: 50%;
-		animation: spin 1s linear infinite;
-		margin-bottom: 1rem;
-	}
-
-	@keyframes spin {
-		0% {
-			transform: rotate(0deg);
-		}
-		100% {
-			transform: rotate(360deg);
-		}
-	}
-
-	.error-icon,
-	.empty-icon {
-		font-size: 3rem;
-		margin-bottom: 1rem;
-	}
-
-	.error-state h3,
-	.empty-state h3 {
-		margin: 0 0 0.5rem;
-		font-size: 1.5rem;
-		color: var(--color-text-primary, #333);
-	}
-
-	.error-state p,
-	.empty-state p {
-		margin: 0 0 1.5rem;
-		color: var(--color-text-secondary, #666);
-		max-width: 400px;
-	}
-
-	.retry-button {
-		padding: 0.75rem 1.5rem;
-		background: var(--color-primary, #2196f3);
-		color: white;
-		border: none;
-		border-radius: 6px;
-		font-size: 1rem;
-		cursor: pointer;
-		transition: background-color 0.2s ease;
-	}
-
-	.retry-button:hover {
-		background: var(--color-primary-dark, #1976d2);
-	}
-
-	.results-info {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 1.5rem;
-		padding: 0 0.5rem;
-	}
-
-	.results-count {
-		color: var(--color-text-secondary, #666);
-		font-size: 0.9rem;
-	}
-
-	.grid-container {
-		position: relative;
-		flex: 1;
-		min-height: 0;
-	}
-
-	/* Scroll indicators */
-	.scroll-indicator {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		height: 3px;
-		background: var(--color-surface);
-		z-index: 10;
-		border-radius: 0 0 2px 2px;
-	}
-
-	.scroll-progress {
-		height: 100%;
-		background: var(--color-primary);
-		border-radius: 0 0 2px 2px;
-		transition: width 0.1s ease;
-	}
-
-	.scroll-fade {
-		position: absolute;
-		bottom: 0;
-		left: 0;
-		right: 0;
-		height: 20px;
-		background: linear-gradient(transparent, var(--color-background));
-		pointer-events: none;
-		z-index: 5;
-		border-radius: 0 0 8px 8px;
-	}
-
-	.thumbnail-grid {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		grid-auto-rows: min-content;
-		gap: 0.75rem;
-		padding: 0.75rem;
-		flex: 1;
-		overflow-y: auto;
-		overflow-x: hidden;
-		min-height: 0;
-		scrollbar-width: thin;
-		scrollbar-color: var(--color-border, #e0e0e0) transparent;
-		align-items: start;
-		grid-auto-flow: row;
-	}
-
-	.thumbnail-grid::-webkit-scrollbar {
-		width: 8px;
-	}
-
-	.thumbnail-grid::-webkit-scrollbar-track {
-		background: transparent;
-	}
-
-	.thumbnail-grid::-webkit-scrollbar-thumb {
-		background: var(--color-border, #e0e0e0);
-		border-radius: 4px;
-	}
-
-	.thumbnail-grid::-webkit-scrollbar-thumb:hover {
-		background: var(--color-text-secondary, #666);
-	}
-
-	/* Responsive Design */
-	@media (max-width: 1024px) {
-		.thumbnail-grid {
-			grid-template-columns: repeat(3, 1fr);
-			gap: 0.75rem;
-		}
-	}
-
-	@media (max-width: 768px) {
-		.loading-state,
-		.error-state,
-		.empty-state {
-			padding: 2rem 1rem;
-			min-height: 150px;
-		}
-
-		.thumbnail-grid {
-			grid-template-columns: repeat(2, 1fr);
-			gap: 0.5rem;
-			padding: 0.5rem;
-		}
-
-		.results-info {
-			margin-bottom: 1rem;
-			padding: 0 0.5rem;
-		}
-
-		.results-count {
-			font-size: 0.85rem;
-		}
-	}
-
-	@media (max-width: 480px) {
-		.thumbnail-grid {
-			grid-template-columns: 1fr; /* Single column on very small screens */
-			gap: 0.75rem;
-			padding: 0.75rem;
-		}
-
-		.loading-state,
-		.error-state,
-		.empty-state {
-			padding: 1.5rem 1rem;
-		}
 	}
 </style>
