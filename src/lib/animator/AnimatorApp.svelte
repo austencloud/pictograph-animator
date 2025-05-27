@@ -132,8 +132,8 @@
 		const beatDelta = (deltaTime / 1000) * speed;
 		const newBeat = currentBeat + beatDelta;
 
-		// Check if we've reached the end
-		if (newBeat >= totalBeats) {
+		// Check if we've reached the end (allow animation to go to totalBeats + 1 to show final beat)
+		if (newBeat > totalBeats) {
 			if (isLooping) {
 				// Loop back to start
 				currentBeat = 0;
@@ -142,7 +142,7 @@
 				// Make sure the engine is reset properly for the next loop
 				engine.reset();
 			} else {
-				// Stop at end
+				// Stop at end (clamp to totalBeats to show final frame)
 				currentBeat = totalBeats;
 				isPlaying = false;
 			}
