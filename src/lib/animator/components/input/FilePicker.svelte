@@ -10,8 +10,8 @@
 		disabled = false,
 		isProcessing = false
 	}: {
-		onSequenceLoaded?: (data: SequenceData) => void;
-		onError?: (error: string) => void;
+		onSequenceLoaded?: (_data: SequenceData) => void;
+		onError?: (_error: string) => void;
 		disabled?: boolean;
 		isProcessing?: boolean;
 	} = $props();
@@ -56,7 +56,7 @@
 	type="file"
 	accept=".png"
 	onchange={handleFileChange}
-	style="display: none;"
+	style:display="none"
 />
 
 <button

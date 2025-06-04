@@ -6,15 +6,15 @@
 import type { SequenceData, SequenceStep, PropAttributes } from '../src/lib/animator/types/core.js';
 import {
 	setManualRotationDegrees,
-	setCustomRotation,
+	// setCustomRotation, // Not used in this example
 	clearManualRotation,
 	hasManualRotation,
 	getManualRotationDegrees
 } from '../src/lib/animator/utils/manual-rotation.js';
 import {
-	ROTATION_PRESETS,
+	// ROTATION_PRESETS, // Not used in this example
 	MOTION_TYPE_PRESETS,
-	applyRotationPreset,
+	// applyRotationPreset, // Not used in this example
 	createStepWithManualRotation,
 	applyManualRotationsToSteps
 } from '../src/lib/animator/utils/rotation-presets.js';

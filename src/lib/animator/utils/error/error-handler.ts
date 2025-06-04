@@ -63,12 +63,7 @@ export class AnimatorErrorHandler {
 			);
 		}
 
-		return this.createError(
-			'FILE_LOAD_ERROR',
-			'Failed to load file',
-			undefined,
-			originalError
-		);
+		return this.createError('FILE_LOAD_ERROR', 'Failed to load file', undefined, originalError);
 	}
 
 	/**
@@ -114,12 +109,7 @@ export class AnimatorErrorHandler {
 			);
 		}
 
-		return this.createError(
-			'ENGINE_ERROR',
-			'Animation engine error',
-			undefined,
-			originalError
-		);
+		return this.createError('ENGINE_ERROR', 'Animation engine error', undefined, originalError);
 	}
 
 	/**

@@ -11,7 +11,7 @@
 	}: {
 		sidebarWidth?: number;
 		isResizing?: boolean;
-		onResizeStart?: (e: MouseEvent) => void;
+		onResizeStart?: (_e: MouseEvent) => void;
 		sidebar?: Snippet;
 		children?: Snippet;
 	} = $props();
@@ -19,7 +19,7 @@
 
 <div class="app-layout">
 	<!-- Left Sidebar: Sequence Browser -->
-	<aside class="sidebar" style="width: {sidebarWidth}px;">
+	<aside class="sidebar" style:width="{sidebarWidth}px">
 		{@render sidebar?.()}
 	</aside>
 

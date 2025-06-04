@@ -3,28 +3,31 @@
  * This demonstrates how to use the precise, manually-validated rotation angles
  */
 
-import type { SequenceData, SequenceStep } from '../src/lib/animator/types/core.js';
-import { 
+import type { SequenceData /* SequenceStep */ } from '../src/lib/animator/types/core.js';
+import {
 	processSequenceWithOrientationMappings,
 	validateSequenceOrientationIntegrity,
 	generateOrientationProcessingReport,
 	exportFinalizedOrientationMappings
 } from '../src/lib/animator/utils/sequence-orientation-processor.js';
-import { getOrientationAngle, getOrientationAngleRadians } from '../src/lib/animator/utils/orientation-mapping.js';
+import {
+	getOrientationAngle,
+	getOrientationAngleRadians
+} from '../src/lib/animator/utils/orientation-mapping.js';
 
 // Example 1: Basic orientation mapping lookup
 function example1_BasicOrientationLookup() {
 	console.log('=== Example 1: Basic Orientation Mapping Lookup ===');
-	
+
 	// Get specific orientation angles
 	const nHandIn = getOrientationAngle('n_hand', 'in');
 	const nHandOut = getOrientationAngle('n_hand', 'out');
 	const neClockwise = getOrientationAngle('ne', 'clockwise');
-	
+
 	console.log(`n_hand 'in' orientation: ${nHandIn}°`);
 	console.log(`n_hand 'out' orientation: ${nHandOut}°`);
 	console.log(`ne 'clockwise' orientation: ${neClockwise}°`);
-	
+
 	// Get angles in radians for calculations
 	const nHandInRadians = getOrientationAngleRadians('n_hand', 'in');
 	console.log(`n_hand 'in' in radians: ${nHandInRadians.toFixed(3)}`);
@@ -33,7 +36,7 @@ function example1_BasicOrientationLookup() {
 // Example 2: Process a complete sequence with orientation mappings
 function example2_ProcessSequence() {
 	console.log('\n=== Example 2: Process Sequence with Orientation Mappings ===');
-	
+
 	// Sample sequence data
 	const originalSequence: SequenceData = [
 		// Metadata
@@ -111,20 +114,20 @@ function example2_ProcessSequence() {
 			}
 		}
 	];
-	
+
 	// Validate sequence integrity first
 	const validation = validateSequenceOrientationIntegrity(originalSequence);
 	console.log('Sequence validation:', validation);
-	
+
 	if (validation.isValid) {
 		// Process the sequence with orientation mappings
 		const processedSequence = processSequenceWithOrientationMappings(originalSequence);
-		
+
 		// Generate a report
 		const report = generateOrientationProcessingReport(originalSequence, processedSequence);
 		console.log('Processing report:');
 		console.log(report);
-		
+
 		// Show the processed sequence
 		console.log('Processed sequence with manual rotations:');
 		console.log(JSON.stringify(processedSequence, null, 2));
@@ -136,7 +139,7 @@ function example2_ProcessSequence() {
 // Example 3: Demonstrate orientation continuity validation
 function example3_OrientationContinuityValidation() {
 	console.log('\n=== Example 3: Orientation Continuity Validation ===');
-	
+
 	// Example with broken continuity (end_ori doesn't match next start_ori)
 	const brokenSequence: SequenceData = [
 		{
@@ -189,7 +192,7 @@ function example3_OrientationContinuityValidation() {
 			}
 		}
 	];
-	
+
 	const validation = validateSequenceOrientationIntegrity(brokenSequence);
 	console.log('Broken sequence validation:');
 	console.log('Valid:', validation.isValid);
@@ -200,7 +203,7 @@ function example3_OrientationContinuityValidation() {
 // Example 4: Export finalized orientation mappings
 function example4_ExportOrientationMappings() {
 	console.log('\n=== Example 4: Export Finalized Orientation Mappings ===');
-	
+
 	const mappings = exportFinalizedOrientationMappings();
 	console.log('Finalized orientation mappings:');
 	console.log(mappings);
@@ -209,12 +212,12 @@ function example4_ExportOrientationMappings() {
 // Example 5: Compare all orientations for a position
 function example5_CompareOrientationsForPosition() {
 	console.log('\n=== Example 5: Compare All Orientations for Position ===');
-	
+
 	const position = 'e_hand';
 	const orientations = ['in', 'out', 'clockwise', 'counter'] as const;
-	
+
 	console.log(`All orientations for ${position}:`);
-	orientations.forEach(orientation => {
+	orientations.forEach((orientation) => {
 		const angle = getOrientationAngle(position, orientation);
 		console.log(`  ${orientation}: ${angle}°`);
 	});

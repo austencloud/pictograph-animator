@@ -4,7 +4,10 @@
 
 import type { SequenceData } from '../../types/core.js';
 import { extractSequenceFromPNG } from '../../utils/file/png-parser.js';
-import { validateFileType, validateSequenceData } from '../../utils/validation/sequence-validator.js';
+import {
+	validateFileType,
+	validateSequenceData
+} from '../../utils/validation/sequence-validator.js';
 
 export interface FileImportResult {
 	success: boolean;
@@ -37,7 +40,7 @@ export class FileService {
 		try {
 			// Extract sequence data from PNG
 			const extractResult = await extractSequenceFromPNG(file);
-			
+
 			if (!extractResult.success) {
 				return {
 					success: false,
@@ -79,7 +82,7 @@ export class FileService {
 
 		try {
 			const parsed = JSON.parse(jsonString);
-			
+
 			// Validate parsed data
 			const validation = validateSequenceData(parsed);
 			if (!validation.isValid) {
@@ -116,16 +119,16 @@ export class FileService {
 			const jsonString = this.exportToJSON(data);
 			const blob = new Blob([jsonString], { type: 'application/json' });
 			const url = URL.createObjectURL(blob);
-			
+
 			const link = document.createElement('a');
 			link.href = url;
 			link.download = filename;
 			document.body.appendChild(link);
 			link.click();
 			document.body.removeChild(link);
-			
+
 			URL.revokeObjectURL(url);
-			
+
 			return { success: true };
 		} catch (error) {
 			return {

@@ -120,7 +120,7 @@
 </script>
 
 <div class="canvas-wrapper">
-	<canvas bind:this={canvasElement} {width} {height} style="width: {width}px; height: {height}px;"
+	<canvas bind:this={canvasElement} {width} {height} style:width="{width}px" style:height="{height}px"
 	></canvas>
 
 	<GridManager bind:this={gridManager} {width} {height} onGridImageLoad={handleGridImageLoad} />

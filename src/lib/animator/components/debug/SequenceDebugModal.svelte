@@ -18,7 +18,7 @@
 		isOpen?: boolean;
 		sequenceData?: SequenceData | null;
 		onClose?: () => void;
-		onApplyOverrides?: (overrides: any) => void;
+		onApplyOverrides?: (_overrides: any) => void;
 	} = $props();
 
 	// State
@@ -297,7 +297,7 @@
 					{#if isAnalyzing}
 						<div class="analysis-progress">
 							<div class="progress-bar">
-								<div class="progress-fill" style="width: {analysisProgress}%"></div>
+								<div class="progress-fill" style:width="{analysisProgress}%"></div>
 							</div>
 							<span class="progress-text">Analyzing... {analysisProgress.toFixed(0)}%</span>
 						</div>
@@ -384,7 +384,7 @@
 										<p>Loading debug data...</p>
 										{#if isAnalyzing}
 											<div class="progress-bar">
-												<div class="progress-fill" style="width: {analysisProgress}%"></div>
+												<div class="progress-fill" style:width="{analysisProgress}%"></div>
 											</div>
 										{/if}
 									</div>

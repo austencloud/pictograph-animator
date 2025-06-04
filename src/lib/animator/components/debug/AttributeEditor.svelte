@@ -9,7 +9,7 @@
 	}: {
 		editMode?: 'view' | 'edit' | 'compare';
 		attributes?: any;
-		onAttributeChange?: (key: string, value: any) => void;
+		onAttributeChange?: (_key: string, _value: any) => void;
 	} = $props();
 
 	// Available options

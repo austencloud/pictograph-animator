@@ -10,7 +10,7 @@
 		disabled = false
 	}: {
 		searchQuery: string;
-		onSearchChange?: (query: string) => void;
+		onSearchChange?: (_query: string) => void;
 		disabled?: boolean;
 	} = $props();
 

@@ -18,7 +18,7 @@
 		debugHistory?: BeatDebugInfo[];
 		modalState: DebugModalState;
 		sequenceDebugger?: SequenceDebugger | null;
-		onOverrideApply?: (overrides: any) => void;
+		onOverrideApply?: (_overrides: any) => void;
 	} = $props();
 
 	// State

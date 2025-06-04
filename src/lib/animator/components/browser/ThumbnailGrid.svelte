@@ -10,8 +10,8 @@
 		onScroll
 	}: {
 		items?: DictionaryItem[];
-		onItemSelect?: (item: DictionaryItem) => void;
-		onScroll?: (event: Event) => void;
+		onItemSelect?: (_item: DictionaryItem) => void;
+		onScroll?: (_event: Event) => void;
 	} = $props();
 
 	// State

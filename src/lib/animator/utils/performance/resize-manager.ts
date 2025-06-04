@@ -165,15 +165,17 @@ export class ResizeManager {
 	 * Process targets in batches to avoid blocking the main thread
 	 */
 	private processBatched(targets: ResizeTarget[]): void {
-		if (targets.length === 0) return;
+		if (targets.length === 0) {
+			return;
+		}
 
 		if (this.isResizing) {
 			// During resizing, process all visible elements immediately for responsive feel
 			for (const target of targets) {
 				try {
 					target.callback();
-				} catch (error) {
-					console.warn('Error in resize callback:', error);
+				} catch {
+					// Error in resize callback
 				}
 			}
 		} else {
@@ -187,8 +189,8 @@ export class ResizeManager {
 				for (let i = currentIndex; i < endIndex; i++) {
 					try {
 						targets[i].callback();
-					} catch (error) {
-						console.warn('Error in resize callback:', error);
+					} catch {
+						// Error in resize callback
 					}
 				}
 

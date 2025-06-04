@@ -1,5 +1,5 @@
 import { PROP_COLORS } from '../../constants/colors.js';
-import { ANIMATION_CONSTANTS } from '../../constants/animation.js';
+// import { ANIMATION_CONSTANTS } from '../../constants/animation.js'; // Not used currently
 
 /**
  * Utility class for generating SVG strings for canvas rendering

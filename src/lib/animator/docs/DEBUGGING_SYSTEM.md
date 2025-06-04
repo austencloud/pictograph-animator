@@ -9,12 +9,14 @@ The Sequence Interpretation Debugging System is a comprehensive tool for analyzi
 ### Core Components
 
 1. **SequenceDebugger** (`src/lib/animator/core/debug/sequence-debugger.ts`)
+
    - Main debugging engine
    - Handles beat-by-beat analysis
    - Manages validation and session tracking
    - Provides event-driven architecture
 
 2. **SequenceDebugModal** (`src/lib/animator/components/debug/SequenceDebugModal.svelte`)
+
    - Main modal interface
    - Tabbed navigation system
    - Keyboard shortcuts support
@@ -50,18 +52,21 @@ The system analyzes each beat of the sequence and provides:
 ### 2. Interactive Debugging Interface
 
 #### Overview Tab
+
 - Summary statistics (total beats, validation results, motion type breakdown)
 - Filterable and sortable beat table
 - Issue highlighting and navigation
 - Real-time analysis progress
 
 #### Beat Editor Tab
+
 - Manual override system for individual beats
 - Attribute modification (motion type, orientations, turns, locations)
 - Live preview and comparison modes
 - Validation feedback for changes
 
 #### Validation Tab
+
 - Comprehensive issue tracking
 - Categorized warnings and errors
 - Detailed validation breakdowns
@@ -69,12 +74,14 @@ The system analyzes each beat of the sequence and provides:
 - Turn count accuracy verification
 
 #### Configuration Tab
+
 - Debug system settings
 - Capture mode configuration
 - Validation level adjustment
 - History management options
 
 #### Export Tab
+
 - Multiple export formats (JSON, CSV, Report)
 - Configurable data filtering
 - Validation summary inclusion
@@ -85,16 +92,19 @@ The system analyzes each beat of the sequence and provides:
 The debugging system performs comprehensive validation:
 
 #### Orientation Continuity
+
 - Verifies that each beat's end orientation matches the next beat's start orientation
 - Detects discontinuities that cause visual jumps
 - Provides angle difference calculations
 
 #### Turn Count Accuracy
+
 - Compares expected turns (from sequence data) with calculated rotations
 - Identifies discrepancies in rotation interpretation
 - Supports tolerance-based validation
 
 #### Motion Type Validation
+
 - Validates motion type-specific calculations
 - Checks for undefined or invalid attributes
 - Provides motion-specific error messages
@@ -122,16 +132,19 @@ The beat editor allows manual overrides for testing:
 ### Advanced Features
 
 #### Keyboard Shortcuts
+
 - `Escape`: Close modal
 - `Ctrl+1-5`: Switch between tabs
 - `Shift+F12`: Toggle debug modal
 
 #### Configuration Options
+
 - **Capture Mode**: Real-time, manual, or step-by-step analysis
 - **Validation Level**: Basic, detailed, or comprehensive checks
 - **History Management**: Control data retention and memory usage
 
 #### Export Formats
+
 - **JSON**: Complete structured data for programmatic analysis
 - **CSV**: Spreadsheet-compatible format for data analysis
 - **Report**: Human-readable text report for documentation
@@ -142,9 +155,9 @@ The beat editor allows manual overrides for testing:
 
 ```svelte
 <script>
-  import DebugButton from '$lib/animator/components/debug/DebugButton.svelte';
-  
-  let sequenceData = $state(null);
+	import DebugButton from '$lib/animator/components/debug/DebugButton.svelte';
+
+	let sequenceData = $state(null);
 </script>
 
 <DebugButton {sequenceData} position="bottom-right" />
@@ -172,6 +185,7 @@ const beatInfo = debugger.analyzeBeat(1);
 Based on the codebase analysis, here's the complete sequence interpretation pipeline:
 
 #### 1. Data Flow
+
 ```
 Raw Sequence JSON → Animation Engine → Prop Calculations → Canvas Rendering
 ```
@@ -179,16 +193,19 @@ Raw Sequence JSON → Animation Engine → Prop Calculations → Canvas Renderin
 #### 2. Key Components
 
 **Animation Engine** (`animation-engine.ts`):
+
 - Manages beat timing and interpolation
 - Calculates prop states for each frame
 - Handles start position vs animation frames
 
 **Prop Calculations** (`prop-calculations.ts`):
+
 - Motion type-specific rotation calculations
 - Orientation angle conversions
 - Center path angle computations
 
 **Sequence Interpretation** (`sequence-interpretation.ts`):
+
 - Turn-to-degrees mapping
 - Orientation-to-angle mapping
 - Rotation direction multipliers
@@ -196,36 +213,44 @@ Raw Sequence JSON → Animation Engine → Prop Calculations → Canvas Renderin
 #### 3. Motion Type Processing
 
 **Pro Motion**:
+
 - Float (0 turns): 90-degree rotation canceling center path
 - Standard: Orientation change + turn rotation with direction
 
 **Anti Motion**:
+
 - Anti-spin calculation with center path consideration
 - Turn rotation applied with direction multiplier
 
 **Static Motion**:
+
 - Staff maintains orientation relative to center
 - No additional rotation beyond orientation alignment
 
 **Dash Motion**:
+
 - Linear interpolation between start and end orientations
 - Shortest angular path calculation
 
 #### 4. Known Issues Identified
 
 **Turn Count Mismatch**:
+
 - Animated rotations don't always match sequence "turns" values
 - Float motion (0 turns) shows 90-degree rotation instead of 0
 
 **Orientation Discontinuity**:
+
 - End orientation of beat N doesn't match start orientation of beat N+1
 - Causes visual jumps in staff orientation
 
 **Center Point Flipping**:
+
 - Staff orientation flips when passing through center during dash motions
 - Inconsistent reference system between staff image and grid position
 
 **Reference System Confusion**:
+
 - Staff image orientation vs grid position calculations use different reference frames
 - Rotation calculations may be applied in wrong coordinate system
 
@@ -234,11 +259,13 @@ Raw Sequence JSON → Animation Engine → Prop Calculations → Canvas Renderin
 ### Common Issues
 
 1. **Modal Won't Open**
+
    - Check if sequence data is loaded
    - Verify debug button is not disabled
    - Try keyboard shortcut `Shift+F12`
 
 2. **Analysis Fails**
+
    - Check browser console for errors
    - Verify sequence data format
    - Try with smaller sequence data
@@ -251,6 +278,7 @@ Raw Sequence JSON → Animation Engine → Prop Calculations → Canvas Renderin
 ### Debug Information
 
 The system provides extensive debug information:
+
 - Calculation methods used for each motion type
 - Intermediate values in rotation calculations
 - Validation failure reasons

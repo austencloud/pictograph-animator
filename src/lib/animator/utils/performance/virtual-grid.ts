@@ -184,7 +184,7 @@ export class VirtualGridManager {
 	 * Notify all subscribers of state changes
 	 */
 	private notifyCallbacks(): void {
-		this.callbacks.forEach(callback => {
+		this.callbacks.forEach((callback) => {
 			try {
 				callback();
 			} catch (error) {
@@ -203,9 +203,8 @@ export class VirtualGridManager {
 		isResizing: boolean;
 		resizeMode: string;
 	} {
-		const renderRatio = this.state.items.length > 0 
-			? this.state.visibleItems.length / this.state.items.length 
-			: 0;
+		const renderRatio =
+			this.state.items.length > 0 ? this.state.visibleItems.length / this.state.items.length : 0;
 
 		return {
 			totalItems: this.state.items.length,

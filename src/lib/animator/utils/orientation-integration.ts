@@ -4,7 +4,10 @@
 
 import type { PropAttributes, SequenceStep, SequenceData } from '../types/core.js';
 import { setManualRotationRadians } from './manual-rotation.js';
-import { getOrientationAngleRadians, loadOrientationMappingsFromJSON } from './orientation-mapping.js';
+import {
+	getOrientationAngleRadians,
+	loadOrientationMappingsFromJSON
+} from './orientation-mapping.js';
 
 /**
  * Apply orientation-based manual rotations to a sequence step
@@ -63,7 +66,7 @@ export function applyOrientationBasedRotationsToSequence(sequenceData: SequenceD
 	const updatedStartPosition = applyOrientationBasedRotations(startPosition as SequenceStep);
 
 	// Apply to all steps
-	const updatedSteps = steps.map(step => applyOrientationBasedRotations(step as SequenceStep));
+	const updatedSteps = steps.map((step) => applyOrientationBasedRotations(step as SequenceStep));
 
 	return [metadata, updatedStartPosition, ...updatedSteps];
 }
@@ -120,7 +123,9 @@ export function convertSequenceToOrientationBased(
 
 	return sequenceData.map((item, index) => {
 		// Skip metadata
-		if (index === 0) return item;
+		if (index === 0) {
+			return item;
+		}
 
 		const step = item as SequenceStep;
 		const updatedStep = { ...step };
@@ -209,7 +214,7 @@ export async function loadTestDataAndApplyToSequence(
 			try {
 				const jsonData = e.target?.result as string;
 				const success = loadOrientationMappingsFromJSON(jsonData);
-				
+
 				if (success) {
 					const updatedSequence = applyOrientationBasedRotationsToSequence(sequenceData);
 					resolve(updatedSequence);
@@ -255,7 +260,7 @@ export function validateOrientationBasedSequence(sequenceData: SequenceData): {
 	let stepsWithOrientations = 0;
 	let stepsWithManualRotations = 0;
 
-	sequenceData.slice(1).forEach((item, index) => {
+	sequenceData.slice(1).forEach((item, _index) => {
 		const step = item as SequenceStep;
 		totalSteps++;
 
@@ -315,7 +320,7 @@ export function generateRotationComparisonReport(
 	orientationBasedSequence: SequenceData
 ): string {
 	const report = ['# Rotation Comparison Report\n'];
-	
+
 	report.push('## Summary');
 	report.push(`- Original sequence steps: ${originalSequence.length - 1}`);
 	report.push(`- Orientation-based sequence steps: ${orientationBasedSequence.length - 1}\n`);
@@ -327,16 +332,20 @@ export function generateRotationComparisonReport(
 		const orientationStep = orientationBasedSequence[i] as SequenceStep;
 
 		report.push(`### Beat ${originalStep.beat}`);
-		
+
 		// Blue prop comparison
 		report.push('**Blue Prop:**');
 		report.push(`- Original: ${originalStep.blue_attributes.motion_type} motion`);
-		report.push(`- Orientation-based: Manual rotation ${orientationStep.blue_attributes.manual_start_rotation !== undefined ? 'applied' : 'not applied'}`);
-		
+		report.push(
+			`- Orientation-based: Manual rotation ${orientationStep.blue_attributes.manual_start_rotation !== undefined ? 'applied' : 'not applied'}`
+		);
+
 		// Red prop comparison
 		report.push('**Red Prop:**');
 		report.push(`- Original: ${originalStep.red_attributes.motion_type} motion`);
-		report.push(`- Orientation-based: Manual rotation ${orientationStep.red_attributes.manual_start_rotation !== undefined ? 'applied' : 'not applied'}`);
+		report.push(
+			`- Orientation-based: Manual rotation ${orientationStep.red_attributes.manual_start_rotation !== undefined ? 'applied' : 'not applied'}`
+		);
 		report.push('');
 	}
 

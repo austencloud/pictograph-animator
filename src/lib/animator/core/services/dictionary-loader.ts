@@ -80,13 +80,12 @@ export class DictionaryLoader {
 				versions: versions.sort() // Sort versions naturally
 			}));
 
-			console.log(`Dynamically discovered ${sequences.length} sequences from dictionary`);
+			// Dynamically discovered sequences from dictionary
 
 			// Return all sequences sorted alphabetically by name
 			return sequences.sort((a, b) => a.name.localeCompare(b.name));
-		} catch (error) {
-			console.warn('Failed to dynamically load sequences:', error);
-			console.info('No sequences found in dictionary directory');
+		} catch {
+			// Failed to dynamically load sequences - no sequences found in dictionary directory
 
 			// Return empty array - let the UI handle the empty state
 			return [];

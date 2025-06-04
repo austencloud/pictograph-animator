@@ -18,7 +18,8 @@
 
 <div class="results-info">
 	<span class="results-count">
-		{itemCount} sequence{pluralSuffix} {resultText}
+		{itemCount} sequence{pluralSuffix}
+		{resultText}
 	</span>
 </div>
 

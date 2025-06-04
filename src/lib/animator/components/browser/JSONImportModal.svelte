@@ -12,7 +12,7 @@
 	}: {
 		isOpen: boolean;
 		onClose?: () => void;
-		onImport?: (data: SequenceData) => void;
+		onImport?: (_data: SequenceData) => void;
 	} = $props();
 
 	// State
@@ -163,7 +163,8 @@ Example format: [metadata, step1, step2, ...]"
 
 					<div class="help-section">
 						<p class="help-text">
-							<strong>Expected format:</strong> An array starting with metadata object, followed by sequence steps.
+							<strong>Expected format:</strong> An array starting with metadata object, followed by sequence
+							steps.
 						</p>
 						<button
 							type="button"
@@ -179,12 +180,7 @@ Example format: [metadata, step1, step2, ...]"
 
 			<!-- Footer -->
 			<div class="modal-footer">
-				<button
-					type="button"
-					class="cancel-button"
-					onclick={handleClose}
-					disabled={isProcessing}
-				>
+				<button type="button" class="cancel-button" onclick={handleClose} disabled={isProcessing}>
 					Cancel
 				</button>
 				<button
@@ -225,7 +221,9 @@ Example format: [metadata, step1, step2, ...]"
 	.modal-content {
 		background: var(--color-surface);
 		border-radius: 12px;
-		box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+		box-shadow:
+			0 20px 25px -5px rgba(0, 0, 0, 0.1),
+			0 10px 10px -5px rgba(0, 0, 0, 0.04);
 		max-width: 600px;
 		width: 100%;
 		max-height: 90vh;

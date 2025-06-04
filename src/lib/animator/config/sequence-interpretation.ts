@@ -125,7 +125,7 @@ export const ORIENTATION_TO_ANGLE: Record<string, number> = {
  * Get degrees for a given number of turns
  */
 export function getDegreesForTurns(turns: number | undefined): number {
-	if (turns === undefined || turns === null) return 0;
+	if (turns === undefined || turns === null) {return 0;}
 
 	// Handle exact matches first
 	if (TURN_TO_DEGREES[turns] !== undefined) {
@@ -141,7 +141,7 @@ export function getDegreesForTurns(turns: number | undefined): number {
  * Get rotation direction multiplier
  */
 export function getRotationMultiplier(direction: PropRotDir): number {
-	if (!direction) return 0;
+	if (!direction) {return 0;}
 	return ROTATION_DIRECTION[direction] || 0;
 }
 
@@ -149,7 +149,7 @@ export function getRotationMultiplier(direction: PropRotDir): number {
  * Get angle for orientation string
  */
 export function getOrientationAngle(orientation: string | undefined): number {
-	if (!orientation) return 0;
+	if (!orientation) {return 0;}
 	return ORIENTATION_TO_ANGLE[orientation.toLowerCase()] || 0;
 }
 
@@ -172,8 +172,8 @@ export function radiansToDegrees(radians: number): number {
  */
 export function normalizeAngle(angle: number): number {
 	const TWO_PI = 2 * Math.PI;
-	while (angle < 0) angle += TWO_PI;
-	while (angle >= TWO_PI) angle -= TWO_PI;
+	while (angle < 0) {angle += TWO_PI;}
+	while (angle >= TWO_PI) {angle -= TWO_PI;}
 	return angle;
 }
 

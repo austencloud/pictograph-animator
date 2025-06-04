@@ -2,7 +2,7 @@
  * Sequence data validation utilities
  */
 
-import type { SequenceData } from '../../types/core.js';
+// import type { SequenceData } from '../../types/core.js'; // Not used currently
 
 export interface ValidationResult {
 	isValid: boolean;

@@ -2,7 +2,14 @@
  * Type definitions for the sequence interpretation debugging system
  */
 
-import type { PropAttributes, SequenceStep, PropState, MotionType, PropRotDir, Orientation } from './core.js';
+import type {
+	PropAttributes,
+	// SequenceStep, // Not used currently
+	// PropState, // Not used currently
+	MotionType,
+	PropRotDir,
+	Orientation
+} from './core.js';
 
 // ============================================================================
 // DEBUGGING STATE TYPES
@@ -20,17 +27,17 @@ export interface BeatDebugInfo {
 export interface PropDebugInfo {
 	// Input attributes
 	attributes: PropAttributes;
-	
+
 	// Calculated values
 	startCoords: { x: number; y: number };
 	endCoords: { x: number; y: number };
 	currentCoords: { x: number; y: number };
 	centerPathAngle: number;
 	staffRotationAngle: number;
-	
+
 	// Interpretation details
 	interpretation: RotationInterpretation;
-	
+
 	// Validation results
 	validation: PropValidation;
 }
@@ -170,7 +177,7 @@ export interface ValidationDisplayState {
 // UTILITY TYPES
 // ============================================================================
 
-export type DebugEventType = 
+export type DebugEventType =
 	| 'beat_calculated'
 	| 'validation_completed'
 	| 'override_applied'

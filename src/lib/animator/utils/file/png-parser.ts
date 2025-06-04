@@ -100,8 +100,8 @@ function parsePNGMetadata(data: Uint8Array): PNGMetadata | null {
 				if (keyword === ANIMATION_CONSTANTS.METADATA_KEYWORD) {
 					try {
 						return JSON.parse(text);
-					} catch (e) {
-						console.warn('Failed to parse metadata JSON:', e);
+					} catch {
+						// Failed to parse metadata JSON
 					}
 				}
 			}

@@ -17,7 +17,7 @@
 		totalBeats?: number;
 		onPlayPause?: () => void;
 		onReset?: () => void;
-		onSpeedChange?: (value: number) => void;
+		onSpeedChange?: (_value: number) => void;
 	} = $props();
 
 	// Handle speed change
@@ -125,7 +125,7 @@
 	<!-- Progress Bar (Full Width) -->
 	<div class="progress-bar-container">
 		<div class="progress-bar">
-			<div class="progress-fill" style="width: {progressPercent}%"></div>
+			<div class="progress-fill" style:width="{progressPercent}%"></div>
 		</div>
 	</div>
 </div>

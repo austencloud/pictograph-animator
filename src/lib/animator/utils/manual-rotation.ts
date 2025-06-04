@@ -57,10 +57,7 @@ export function setManualRotationRadians(
 /**
  * Calculate manual staff rotation based on manual rotation fields
  */
-export function calculateManualStaffRotation(
-	attributes: PropAttributes,
-	t: number
-): number | null {
+export function calculateManualStaffRotation(attributes: PropAttributes, t: number): number | null {
 	// Return null if manual rotation is not specified
 	if (
 		attributes.manual_start_rotation === undefined ||
@@ -108,8 +105,12 @@ export function calculateManualStaffRotation(
  * Clear manual rotation values from attributes
  */
 export function clearManualRotation(attributes: PropAttributes): PropAttributes {
-	const { manual_start_rotation, manual_end_rotation, manual_rotation_direction, ...rest } =
-		attributes;
+	const {
+		manual_start_rotation: _manual_start_rotation,
+		manual_end_rotation: _manual_end_rotation,
+		manual_rotation_direction: _manual_rotation_direction,
+		...rest
+	} = attributes;
 	return rest;
 }
 
@@ -118,8 +119,7 @@ export function clearManualRotation(attributes: PropAttributes): PropAttributes 
  */
 export function hasManualRotation(attributes: PropAttributes): boolean {
 	return (
-		attributes.manual_start_rotation !== undefined &&
-		attributes.manual_end_rotation !== undefined
+		attributes.manual_start_rotation !== undefined && attributes.manual_end_rotation !== undefined
 	);
 }
 

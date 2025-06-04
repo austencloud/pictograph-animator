@@ -14,8 +14,8 @@
 		onScroll
 	}: {
 		items?: DictionaryItem[];
-		onItemSelect?: (item: DictionaryItem) => void;
-		onScroll?: (event: Event) => void;
+		onItemSelect?: (_item: DictionaryItem) => void;
+		onScroll?: (_event: Event) => void;
 	} = $props();
 
 	// State
@@ -159,7 +159,7 @@
 	>
 		<!-- Top spacer for virtual scrolling -->
 		{#if virtualState.topSpacer > 0}
-			<div class="spacer" style="height: {virtualState.topSpacer}px;"></div>
+			<div class="spacer" style:height="{virtualState.topSpacer}px"></div>
 		{/if}
 
 		<!-- Visible items -->
@@ -169,7 +169,7 @@
 
 		<!-- Bottom spacer for virtual scrolling -->
 		{#if virtualState.bottomSpacer > 0}
-			<div class="spacer" style="height: {virtualState.bottomSpacer}px;"></div>
+			<div class="spacer" style:height="{virtualState.bottomSpacer}px"></div>
 		{/if}
 	</div>
 </div>

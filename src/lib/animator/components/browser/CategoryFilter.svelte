@@ -12,7 +12,7 @@
 	}: {
 		selectedCategory: string;
 		categories: string[];
-		onCategoryChange?: (category: string) => void;
+		onCategoryChange?: (_category: string) => void;
 		onRefresh?: () => void;
 		disabled?: boolean;
 	} = $props();

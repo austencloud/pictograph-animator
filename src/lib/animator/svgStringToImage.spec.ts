@@ -24,7 +24,7 @@ const setupMocks = () => {
 						this.onerror && this.onerror(new Error('Invalid image data'));
 					}
 				}, 0);
-				return value;
+				// Setters should not return values
 			},
 			get() {
 				return this._src;

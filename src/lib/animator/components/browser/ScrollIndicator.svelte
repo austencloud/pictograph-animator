@@ -12,7 +12,7 @@
 {#if showIndicator}
 	<!-- Scroll progress indicator -->
 	<div class="scroll-indicator">
-		<div class="scroll-progress" style="width: {scrollProgress * 100}%"></div>
+		<div class="scroll-progress" style:width="{scrollProgress * 100}%"></div>
 	</div>
 {/if}
 

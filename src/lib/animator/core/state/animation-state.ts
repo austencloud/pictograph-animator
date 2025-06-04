@@ -35,28 +35,28 @@ export interface AnimationState {
 
 export interface AnimationStateActions {
 	// Sequence actions
-	loadSequence: (data: SequenceData) => void;
+	loadSequence: (_data: SequenceData) => void;
 	clearSequence: () => void;
 
 	// Animation controls
 	play: () => void;
 	pause: () => void;
 	reset: () => void;
-	setSpeed: (speed: number) => void;
-	setBeat: (beat: number) => void;
+	setSpeed: (_speed: number) => void;
+	setBeat: (_beat: number) => void;
 	toggleLoop: () => void;
 
 	// Prop state updates
-	updatePropStates: (blue: PropState, red: PropState) => void;
+	updatePropStates: (_blue: PropState, _red: PropState) => void;
 
 	// Message actions
-	setError: (message: string) => void;
-	setSuccess: (message: string) => void;
+	setError: (_message: string) => void;
+	setSuccess: (_message: string) => void;
 	clearMessages: () => void;
 
 	// UI actions
-	setLoading: (loading: boolean) => void;
-	setCanvasSize: (width: number, height: number) => void;
+	setLoading: (_loading: boolean) => void;
+	setCanvasSize: (_width: number, _height: number) => void;
 	toggleGrid: () => void;
 }
 

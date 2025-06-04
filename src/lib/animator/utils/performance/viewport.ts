@@ -15,7 +15,7 @@ export interface ViewportEntry {
 	boundingClientRect: DOMRectReadOnly;
 }
 
-export type ViewportCallback = (entries: ViewportEntry[]) => void;
+export type ViewportCallback = (_entries: ViewportEntry[]) => void;
 
 /**
  * Enhanced intersection observer wrapper with better performance characteristics

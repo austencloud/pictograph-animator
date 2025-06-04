@@ -12,8 +12,8 @@
 		children,
 		isProcessing = $bindable(false)
 	}: {
-		onSequenceLoaded?: (data: SequenceData) => void;
-		onError?: (error: string) => void;
+		onSequenceLoaded?: (_data: SequenceData) => void;
+		onError?: (_error: string) => void;
 		disabled?: boolean;
 		children?: import('svelte').Snippet;
 		isProcessing?: boolean;
@@ -130,9 +130,10 @@ To create compatible PNG files:
 </script>
 
 <div
-	class="drop-zone {isDragOver ? 'drag-over' : ''} {isProcessing ? 'processing' : ''} {disabled
-		? 'disabled'
-		: ''}"
+	class="drop-zone"
+	class:disabled
+	class:processing={isProcessing}
+	class:drag-over={isDragOver}
 	role="button"
 	tabindex="0"
 	aria-label="Drag and drop area for PNG files"

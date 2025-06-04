@@ -7,7 +7,7 @@
 	}: {
 		sidebarWidth: number;
 		isResizing: boolean;
-		onResizeStart?: (e: MouseEvent) => void;
+		onResizeStart?: (_e: MouseEvent) => void;
 	} = $props();
 
 	// Resize state

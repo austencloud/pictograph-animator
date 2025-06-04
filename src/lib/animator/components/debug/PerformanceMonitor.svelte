@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resizeManager } from '../../utils/performance/resize-manager.js';
-	import { thumbnailViewportManager } from '../../utils/performance/viewport.js';
+	// import { thumbnailViewportManager } from '../../utils/performance/viewport.js'; // Not used currently
 
 	// Props
 	let {
@@ -53,13 +53,13 @@
 	<div class="performance-monitor">
 		<div class="monitor-header">
 			<span class="monitor-title">📊 Performance</span>
-			<div 
-				class="status-indicator" 
+			<div
+				class="status-indicator"
 				class:resizing={stats.isResizing}
-				style="background-color: {getPerformanceColor()}"
+				style:background-color={getPerformanceColor()}
 			></div>
 		</div>
-		
+
 		<div class="monitor-stats">
 			<div class="stat-item">
 				<span class="stat-label">Total:</span>
@@ -119,7 +119,8 @@
 	}
 
 	@keyframes pulse {
-		0%, 100% {
+		0%,
+		100% {
 			opacity: 1;
 			transform: scale(1);
 		}

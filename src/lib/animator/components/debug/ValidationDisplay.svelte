@@ -21,8 +21,7 @@
 	<h4>✅ Validation Results</h4>
 	<div class="validation-grid">
 		<div class="validation-item {getValidationClass(propData?.validation.isValid || false)}">
-			<span class="validation-icon"
-				>{getValidationIcon(propData?.validation.isValid || false)}</span
+			<span class="validation-icon">{getValidationIcon(propData?.validation.isValid || false)}</span
 			>
 			<span class="validation-label">Overall Valid</span>
 		</div>

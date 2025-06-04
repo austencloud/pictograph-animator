@@ -12,8 +12,8 @@
 		debugHistory?: BeatDebugInfo[];
 		selectedBeat?: number | null;
 		selectedProp?: 'blue' | 'red' | null;
-		onBeatSelect?: (beatNumber: number) => void;
-		onPropSelect?: (prop: 'blue' | 'red') => void;
+		onBeatSelect?: (_beatNumber: number) => void;
+		onPropSelect?: (_prop: 'blue' | 'red') => void;
 	} = $props();
 
 	function handleBeatChange(event: Event): void {

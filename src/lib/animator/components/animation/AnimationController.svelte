@@ -30,9 +30,9 @@
 		sequenceData: SequenceData | null;
 		blueProp: PropState;
 		redProp: PropState;
-		onSequenceLoad?: (data: SequenceData) => void;
-		onError?: (message: string) => void;
-		onSuccess?: (message: string) => void;
+		onSequenceLoad?: (_data: SequenceData) => void;
+		onError?: (_message: string) => void;
+		onSuccess?: (_message: string) => void;
 		renderControls?: boolean;
 	} = $props();
 

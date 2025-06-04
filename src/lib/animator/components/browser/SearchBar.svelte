@@ -20,8 +20,8 @@
 		searchQuery: string;
 		selectedCategory: string;
 		categories: string[];
-		onSearchChange?: (query: string) => void;
-		onCategoryChange?: (category: string) => void;
+		onSearchChange?: (_query: string) => void;
+		onCategoryChange?: (_category: string) => void;
 		onRefresh?: () => void;
 		onJSONImport?: () => void;
 		disabled?: boolean;

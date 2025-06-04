@@ -93,7 +93,7 @@ export function gridPointToAngle(gridPoint: GridPoint): number {
  * Map position name to coordinates (replaces angle-based system)
  */
 export function mapPositionToCoordinates(position: string | undefined): { x: number; y: number } {
-	if (!position) return { x: ANIMATION_CONSTANTS.GRID_CENTER, y: ANIMATION_CONSTANTS.GRID_CENTER };
+	if (!position) {return { x: ANIMATION_CONSTANTS.GRID_CENTER, y: ANIMATION_CONSTANTS.GRID_CENTER };}
 
 	// Map cardinal directions to hand points for staff positioning
 	const positionMapping: Record<string, string> = {
@@ -118,7 +118,7 @@ export function mapPositionToCoordinates(position: string | undefined): { x: num
  * Map position name to angle (updated for diamond grid) - kept for backward compatibility
  */
 export function mapPositionToAngle(position: string | undefined): number {
-	if (!position) return 0;
+	if (!position) {return 0;}
 
 	// For cardinal directions, use hand points
 	const positionMapping: Record<string, string> = {

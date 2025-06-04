@@ -11,7 +11,7 @@ import { degreesToRadians } from './manual-rotation.js';
  */
 export interface OrientationMappingData {
 	[position: string]: {
-		[orientation in Orientation]?: number; // angles in degrees
+		[_orientation in Orientation]?: number; // angles in degrees
 	};
 }
 
@@ -83,13 +83,13 @@ let currentOrientationMappings: OrientationMappingData = { ...FINALIZED_ORIENTAT
 export function getOrientationAngle(position: string, orientation: Orientation): number {
 	const positionData = currentOrientationMappings[position];
 	if (!positionData) {
-		console.warn(`No orientation data found for position: ${position}`);
+		// No orientation data found for position
 		return 0;
 	}
 
 	const angle = positionData[orientation];
 	if (angle === undefined) {
-		console.warn(`No orientation data found for ${position} + ${orientation}`);
+		// No orientation data found for position + orientation
 		return 0;
 	}
 
@@ -119,8 +119,8 @@ export function loadOrientationMappingsFromJSON(jsonData: string): boolean {
 		const data = JSON.parse(jsonData) as OrientationMappingData;
 		updateOrientationMappings(data);
 		return true;
-	} catch (error) {
-		console.error('Error loading orientation mappings from JSON:', error);
+	} catch {
+		// Error loading orientation mappings from JSON
 		return false;
 	}
 }
@@ -227,9 +227,12 @@ export function getOrientationMappingStats(): {
 /**
  * Create a mapping function that can be used in place of the current orientation calculation
  */
-export function createOrientationMapper(): (position: string, orientation: Orientation) => number {
-	return (position: string, orientation: Orientation) => {
-		return getOrientationAngleRadians(position, orientation);
+export function createOrientationMapper(): (
+	_position: string,
+	_orientation: Orientation
+) => number {
+	return (_position: string, _orientation: Orientation) => {
+		return getOrientationAngleRadians(_position, _orientation);
 	};
 }
 

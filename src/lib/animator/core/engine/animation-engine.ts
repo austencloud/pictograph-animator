@@ -58,8 +58,8 @@ export class AnimationEngine {
 			this.initializePropStates();
 
 			return true;
-		} catch (err) {
-			console.error('Error initializing animation engine:', err);
+		} catch {
+			// Error initializing animation engine
 			return false;
 		}
 	}
@@ -277,10 +277,8 @@ export class AnimationEngine {
 				const normalizedDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
 
 				return startAngle + normalizedDiff * t;
-			} catch (error) {
-				console.warn(
-					`Failed to get orientation mapping for ${currentAttrs.start_loc}(${currentAttrs.start_ori}) → ${currentAttrs.end_loc}(${currentAttrs.end_ori}), falling back to dynamic calculation`
-				);
+			} catch {
+				// Failed to get orientation mapping, falling back to dynamic calculation
 			}
 		}
 

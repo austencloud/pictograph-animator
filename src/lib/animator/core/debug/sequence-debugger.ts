@@ -7,10 +7,10 @@ import type {
 	SequenceData,
 	SequenceStep,
 	PropAttributes,
-	PropState,
-	MotionType,
-	PropRotDir,
-	Orientation
+	PropState
+	// MotionType, // Not used currently
+	// PropRotDir, // Not used currently
+	// Orientation // Not used currently
 } from '../../types/core.js';
 
 import type {
@@ -23,9 +23,9 @@ import type {
 	DebugConfiguration,
 	DebugOverrides,
 	DebugSession,
-	ValidationSummary,
-	DebugEvent,
-	DebugMetrics
+	ValidationSummary
+	// DebugEvent, // Not used currently
+	// DebugMetrics // Not used currently
 } from '../../types/debug.js';
 
 import { AnimationEngine } from '../engine/animation-engine.js';
@@ -34,8 +34,8 @@ import {
 	getOrientationAngle,
 	getDegreesForTurns,
 	getRotationMultiplier,
-	degreesToRadians,
-	normalizeAngle
+	degreesToRadians
+	// normalizeAngle // Not used currently
 } from '../../config/sequence-interpretation.js';
 
 import {
@@ -90,7 +90,9 @@ export class SequenceDebugger {
 	}
 
 	endSession(): DebugSession | null {
-		if (!this.currentSession) return null;
+		if (!this.currentSession) {
+			return null;
+		}
 
 		this.currentSession.endTime = Date.now();
 		this.currentSession.history = [...this.debugHistory];
@@ -108,9 +110,11 @@ export class SequenceDebugger {
 	// ============================================================================
 
 	analyzeBeat(beatNumber: number): BeatDebugInfo | null {
-		if (!this.sequenceData || !this.animationEngine) return null;
+		if (!this.sequenceData || !this.animationEngine) {
+			return null;
+		}
 
-		const startTime = performance.now();
+		// const startTime = performance.now(); // Not used currently
 
 		// Calculate animation state
 		this.animationEngine.calculateState(beatNumber);
@@ -119,7 +123,9 @@ export class SequenceDebugger {
 
 		// Get sequence step data
 		const stepData = this.getStepDataForBeat(beatNumber);
-		if (!stepData) return null;
+		if (!stepData) {
+			return null;
+		}
 
 		const { currentStep, nextStep, t } = stepData;
 
@@ -160,7 +166,7 @@ export class SequenceDebugger {
 		// Emit event
 		this.emitEvent('beat_calculated', { debugInfo });
 
-		const calculationTime = performance.now() - startTime;
+		// const calculationTime = performance.now() - startTime; // Not used currently
 
 		// Auto-validate if enabled
 		if (this.configuration.autoValidate) {
@@ -238,7 +244,7 @@ export class SequenceDebugger {
 					totalRotation = degreesToRadians(90) * getRotationMultiplier(rotationDirection);
 					calculationMethod = 'pro_float';
 				} else {
-					let orientationChange = endOriAngle - startOriAngle;
+					const orientationChange = endOriAngle - startOriAngle;
 					const turnRotation = degreesToRadians(turnsDegrees);
 					const directionMultiplier = getRotationMultiplier(rotationDirection);
 
@@ -263,14 +269,19 @@ export class SequenceDebugger {
 				calculationMethod = 'static_orientation';
 				break;
 
-			case 'dash':
+			case 'dash': {
 				let angleDiff = endOriAngle - startOriAngle;
-				if (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
-				if (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+				if (angleDiff > Math.PI) {
+					angleDiff -= 2 * Math.PI;
+				}
+				if (angleDiff < -Math.PI) {
+					angleDiff += 2 * Math.PI;
+				}
 				totalRotation = angleDiff;
 				calculationMethod = 'dash_interpolation';
 				intermediateValues.angleDiff = angleDiff;
 				break;
+			}
 
 			default:
 				totalRotation = 0;
@@ -488,7 +499,9 @@ export class SequenceDebugger {
 	}
 
 	private getStepDataForBeat(beatNumber: number) {
-		if (!this.sequenceData) return null;
+		if (!this.sequenceData) {
+			return null;
+		}
 
 		const steps = this.sequenceData.slice(2) as SequenceStep[];
 		const stepIndex = Math.floor(beatNumber - 1);
@@ -498,7 +511,9 @@ export class SequenceDebugger {
 		const currentStep = steps[stepIndex];
 		const nextStep = steps[nextStepIndex] || steps[stepIndex];
 
-		if (!currentStep) return null;
+		if (!currentStep) {
+			return null;
+		}
 
 		return { currentStep, nextStep, t };
 	}
@@ -509,11 +524,15 @@ export class SequenceDebugger {
 		beatNumber: number
 	): PropAttributes {
 		const beatOverride = this.overrides.beatOverrides.get(beatNumber);
-		if (!beatOverride || !beatOverride.enabled) return attrs;
+		if (!beatOverride || !beatOverride.enabled) {
+			return attrs;
+		}
 
 		const propOverride =
 			propColor === 'blue' ? beatOverride.blueOverrides : beatOverride.redOverrides;
-		if (!propOverride) return attrs;
+		if (!propOverride) {
+			return attrs;
+		}
 
 		return {
 			...attrs,

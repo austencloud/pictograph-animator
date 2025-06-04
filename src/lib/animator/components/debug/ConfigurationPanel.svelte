@@ -13,11 +13,11 @@
 	}: {
 		sequenceData?: SequenceData | null;
 		debugHistory?: BeatDebugInfo[];
-		onBeatSelect?: (beatNumber: number) => void;
+		onBeatSelect?: (_beatNumber: number) => void;
 		onParameterChange?: (
-			beatNumber: number,
-			prop: 'blue' | 'red',
-			changes: Partial<PropAttributes>
+			_beatNumber: number,
+			_prop: 'blue' | 'red',
+			_changes: Partial<PropAttributes>
 		) => void;
 	} = $props();
 

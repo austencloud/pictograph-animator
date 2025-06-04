@@ -9,14 +9,18 @@ The manual rotation system extends the existing `PropAttributes` interface with 
 ## Key Files and Locations
 
 ### 1. Type Definitions
+
 **File:** `src/lib/animator/types/core.ts`
+
 - Extended `PropAttributes` interface with manual rotation fields:
   - `manual_start_rotation?: number` (in radians)
-  - `manual_end_rotation?: number` (in radians) 
+  - `manual_end_rotation?: number` (in radians)
   - `manual_rotation_direction?: 'cw' | 'ccw' | 'shortest'`
 
 ### 2. Core Manual Rotation Utilities
+
 **File:** `src/lib/animator/utils/manual-rotation.ts`
+
 - `setManualRotationDegrees()` - Set rotation values in degrees
 - `setManualRotationRadians()` - Set rotation values in radians
 - `calculateManualStaffRotation()` - Calculate rotation at time t
@@ -25,36 +29,44 @@ The manual rotation system extends the existing `PropAttributes` interface with 
 - `validateManualRotation()` - Validate manual rotation inputs
 
 ### 3. Animation Engine Integration
+
 **File:** `src/lib/animator/core/engine/animation-engine.ts`
+
 - Modified `calculateStaffRotation()` method to check for manual rotation first
 - Falls back to dynamic calculations only if manual rotation is not specified
 
 ### 4. Preset Utilities
+
 **File:** `src/lib/animator/utils/rotation-presets.ts`
+
 - Common rotation presets (quarter turns, half turns, full turns, etc.)
 - Motion type specific presets (pro isolation, float, static)
 - Batch application utilities for multiple steps
 
 ### 5. Validation Integration
+
 **File:** `src/lib/animator/utils/validation/input-validator.ts`
+
 - Added manual rotation validation to `validatePropAttributes()`
 
 ## Usage Examples
 
 ### Basic Manual Rotation
+
 ```typescript
 import { setManualRotationDegrees } from './utils/manual-rotation.js';
 
 // Set blue prop to rotate from 0° to 90° clockwise
 step.blue_attributes = setManualRotationDegrees(
-  step.blue_attributes,
-  0,    // start degrees
-  90,   // end degrees
-  'cw'  // direction
+	step.blue_attributes,
+	0, // start degrees
+	90, // end degrees
+	'cw' // direction
 );
 ```
 
 ### Using Presets
+
 ```typescript
 import { MOTION_TYPE_PRESETS } from './utils/rotation-presets.js';
 
@@ -66,18 +78,19 @@ step.red_attributes = MOTION_TYPE_PRESETS.float_no_rotation(step.red_attributes)
 ```
 
 ### Batch Application
+
 ```typescript
 import { applyManualRotationsToSteps } from './utils/rotation-presets.js';
 
 const rotationMap = {
-  1: {
-    blue: { start: 0, end: 90, direction: 'cw' },
-    red: { start: 0, end: -90, direction: 'ccw' }
-  },
-  2: {
-    blue: { start: 90, end: 450, direction: 'cw' }, // 1 full turn + 90°
-    red: { start: -90, end: -90, direction: 'shortest' }
-  }
+	1: {
+		blue: { start: 0, end: 90, direction: 'cw' },
+		red: { start: 0, end: -90, direction: 'ccw' }
+	},
+	2: {
+		blue: { start: 90, end: 450, direction: 'cw' }, // 1 full turn + 90°
+		red: { start: -90, end: -90, direction: 'shortest' }
+	}
 };
 
 const updatedSteps = applyManualRotationsToSteps(steps, rotationMap);
@@ -107,6 +120,7 @@ const updatedSteps = applyManualRotationsToSteps(steps, rotationMap);
 ## Testing
 
 Run the test suite to verify the manual rotation system:
+
 ```bash
 npm test src/lib/animator/manual-rotation.test.ts
 ```

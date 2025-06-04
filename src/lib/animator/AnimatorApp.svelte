@@ -25,6 +25,9 @@
 	// Import global styles
 	import './styles/global.css';
 
+	// Import utilities (these are used in the functions but not currently imported)
+	// Note: These functions are now handled by AnimationController, so we'll remove their usage
+
 	// State variables using Svelte 5 runes
 	let sequenceData = $state<SequenceData | null>(null);
 	let blueProp = $state<PropState>({ centerPathAngle: 0, staffRotationAngle: 0, x: 0, y: 0 });
@@ -51,177 +54,22 @@
 	// Sidebar state - default to 50% of viewport width
 	let sidebarWidth = $state(typeof window !== 'undefined' ? window.innerWidth * 0.5 : 600);
 	let isResizing = $state(false);
-	let resizeStartX = $state(0);
-	let resizeStartWidth = $state(0);
 
-	// Animation frame reference
-	let animationFrameId: number | null = null;
-	let lastTimestamp: number | null = null;
-
-	// Clean up on component destroy using $effect
-	$effect(() => {
-		return () => {
-			if (animationFrameId !== null) {
-				cancelAnimationFrame(animationFrameId);
-			}
-		};
-	});
-
-	// Handle sequence load
-	function handleLoadSequence(data: SequenceData): void {
-		try {
-			// Validate sequence data first
-			const validation = InputValidator.validateSequenceData(data);
-			if (!validation.isValid) {
-				errorMessage = `Invalid sequence data: ${validation.errors.join(', ')}`;
-				successMessage = '';
-				return;
-			}
-
-			// Log warnings if any
-			if (validation.warnings.length > 0) {
-				console.info('Sequence warnings:', validation.warnings.join(', '));
-			}
-
-			// Initialize engine with data
-			if (engine.initialize(data)) {
-				// Load sequence data
-				sequenceData = data;
-				const metadata = engine.getMetadata();
-				totalBeats = metadata.totalBeats;
-				sequenceWord = metadata.word;
-				sequenceAuthor = metadata.author;
-				canLoop = engine.canLoop();
-
-				// Reset animation state
-				currentBeat = 0;
-				isPlaying = false;
-				isLooping = false;
-
-				// Update prop states
-				updatePropStates();
-
-				successMessage = 'Sequence loaded successfully!';
-				errorMessage = '';
-			} else {
-				const error = AnimatorErrorHandler.handleEngineError(
-					new Error('Failed to initialize sequence')
-				);
-				errorMessage = AnimatorErrorHandler.formatForUser(error);
-				successMessage = '';
-			}
-		} catch (err) {
-			const error = AnimatorErrorHandler.handleSequenceError(
-				err instanceof Error ? err : new Error(String(err))
-			);
-			errorMessage = AnimatorErrorHandler.formatForUser(error);
-			successMessage = '';
-		}
+	// Animation Controller event handlers
+	function handleAnimationError(message: string): void {
+		errorMessage = message;
+		successMessage = '';
 	}
 
-	// Update prop states from engine
-	function updatePropStates(): void {
-		blueProp = engine.getBluePropState();
-		redProp = engine.getRedPropState();
-	}
-
-	// Animation loop
-	function animationLoop(timestamp: number): void {
-		if (!isPlaying) return;
-
-		// Calculate deltaTime
-		if (lastTimestamp === null) {
-			lastTimestamp = timestamp;
-		}
-		const deltaTime = timestamp - lastTimestamp;
-		lastTimestamp = timestamp;
-
-		// Update current beat based on speed
-		const beatDelta = (deltaTime / 1000) * speed;
-		const newBeat = currentBeat + beatDelta;
-
-		// Check if we've reached the end (allow animation to go to totalBeats + 1 to show final beat)
-		if (newBeat > totalBeats) {
-			if (isLooping) {
-				// Loop back to start
-				currentBeat = 0;
-				lastTimestamp = null;
-
-				// Make sure the engine is reset properly for the next loop
-				engine.reset();
-			} else {
-				// Stop at end (clamp to totalBeats to show final frame)
-				currentBeat = totalBeats;
-				isPlaying = false;
-			}
-		} else {
-			currentBeat = newBeat;
-		}
-
-		// Calculate state for current beat
-		engine.calculateState(currentBeat);
-
-		// Update props from engine state
-		updatePropStates();
-
-		// Request next frame if still playing
-		if (isPlaying) {
-			animationFrameId = requestAnimationFrame(animationLoop);
-		}
-	}
-
-	// Handle play/pause
-	function handlePlayPause(): void {
-		if (isPlaying) {
-			isPlaying = false;
-			if (animationFrameId !== null) {
-				cancelAnimationFrame(animationFrameId);
-				animationFrameId = null;
-			}
-		} else {
-			isPlaying = true;
-			lastTimestamp = null;
-			animationFrameId = requestAnimationFrame(animationLoop);
-		}
-	}
-
-	// Handle reset
-	function handleReset(): void {
-		currentBeat = 0;
-		isPlaying = false;
-
-		if (animationFrameId !== null) {
-			cancelAnimationFrame(animationFrameId);
-			animationFrameId = null;
-		}
-
-		engine.reset();
-		updatePropStates();
-	}
-
-	// Handle speed change
-	function handleSpeedChange(value: number): void {
-		speed = Math.max(0.1, Math.min(3.0, value));
-	}
-
-	// Handle beat change
-	function handleBeatChange(value: number): void {
-		currentBeat = Math.max(0, Math.min(totalBeats, value));
-		engine.calculateState(currentBeat);
-		updatePropStates();
-	}
-
-	// Handle loop toggle
-	function handleLoopToggle(value: boolean): void {
-		if (canLoop) {
-			isLooping = value;
-		}
+	function handleAnimationSuccess(message: string): void {
+		successMessage = message;
+		errorMessage = '';
 	}
 
 	// Handle sequence selection from thumbnail browser
 	function handleSequenceSelected(data: SequenceData, item: DictionaryItem): void {
 		selectedItem = item;
-		handleLoadSequence(data);
+		sequenceData = data;
 
 		// Auto-play the animation after sequence is loaded
 		setTimeout(() => {
@@ -292,7 +140,6 @@
 	bind:sequenceData
 	bind:blueProp
 	bind:redProp
-	onSequenceLoad={handleSequenceLoad}
 	onError={handleAnimationError}
 	onSuccess={handleAnimationSuccess}
 	renderControls={false}

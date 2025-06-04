@@ -11,26 +11,26 @@ import { setManualRotationDegrees } from './manual-rotation.js';
 export const ROTATION_PRESETS = {
 	// No rotation
 	STATIC: { start: 0, end: 0 },
-	
+
 	// Quarter turns (90 degrees)
 	QUARTER_CW: { start: 0, end: 90 },
 	QUARTER_CCW: { start: 0, end: -90 },
-	
+
 	// Half turns (180 degrees)
 	HALF_CW: { start: 0, end: 180 },
 	HALF_CCW: { start: 0, end: -180 },
-	
+
 	// Full turns (360 degrees)
 	FULL_CW: { start: 0, end: 360 },
 	FULL_CCW: { start: 0, end: -360 },
-	
+
 	// Pro isolation (90 degrees matching hand direction)
 	PRO_ISOLATION_CW: { start: 0, end: 90 },
 	PRO_ISOLATION_CCW: { start: 0, end: -90 },
-	
+
 	// Float (no rotation behavior)
 	FLOAT: { start: 0, end: 0 },
-	
+
 	// Common orientations
 	HORIZONTAL: { start: 0, end: 0 },
 	VERTICAL: { start: 90, end: 90 },
@@ -59,37 +59,35 @@ export const MOTION_TYPE_PRESETS = {
 	 */
 	pro_isolation_cw: (attributes: PropAttributes) =>
 		setManualRotationDegrees(attributes, 0, 90, 'cw'),
-	
+
 	pro_isolation_ccw: (attributes: PropAttributes) =>
 		setManualRotationDegrees(attributes, 0, -90, 'ccw'),
-	
+
 	/**
 	 * Float motion - no rotation
 	 */
 	float_no_rotation: (attributes: PropAttributes) =>
 		setManualRotationDegrees(attributes, 0, 0, 'shortest'),
-	
+
 	/**
 	 * Static motion - maintain orientation
 	 */
 	static_horizontal: (attributes: PropAttributes) =>
 		setManualRotationDegrees(attributes, 0, 0, 'shortest'),
-	
+
 	static_vertical: (attributes: PropAttributes) =>
 		setManualRotationDegrees(attributes, 90, 90, 'shortest'),
-	
+
 	/**
 	 * Custom turn amounts
 	 */
-	one_turn_cw: (attributes: PropAttributes) =>
-		setManualRotationDegrees(attributes, 0, 360, 'cw'),
-	
+	one_turn_cw: (attributes: PropAttributes) => setManualRotationDegrees(attributes, 0, 360, 'cw'),
+
 	one_turn_ccw: (attributes: PropAttributes) =>
 		setManualRotationDegrees(attributes, 0, -360, 'ccw'),
-	
-	two_turns_cw: (attributes: PropAttributes) =>
-		setManualRotationDegrees(attributes, 0, 720, 'cw'),
-	
+
+	two_turns_cw: (attributes: PropAttributes) => setManualRotationDegrees(attributes, 0, 720, 'cw'),
+
 	two_turns_ccw: (attributes: PropAttributes) =>
 		setManualRotationDegrees(attributes, 0, -720, 'ccw')
 } as const;
@@ -155,9 +153,9 @@ export function applyManualRotationsToSteps(
 		};
 	}
 ): any[] {
-	return steps.map(step => {
+	return steps.map((step) => {
 		const rotation = rotationMap[step.beat];
-		if (!rotation) return step;
+		if (!rotation) {return step;}
 
 		const updatedStep = { ...step };
 

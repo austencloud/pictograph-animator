@@ -10,7 +10,7 @@
 	}: {
 		width?: number;
 		height?: number;
-		onGridImageLoad?: (image: HTMLImageElement) => void;
+		onGridImageLoad?: (_image: HTMLImageElement) => void;
 	} = $props();
 
 	// Layer2 visibility state with localStorage persistence

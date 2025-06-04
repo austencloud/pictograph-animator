@@ -11,7 +11,7 @@
 	let {
 		onSequenceSelected
 	}: {
-		onSequenceSelected?: (data: SequenceData, item: DictionaryItem) => void;
+		onSequenceSelected?: (_data: SequenceData, _item: DictionaryItem) => void;
 	} = $props();
 
 	// State

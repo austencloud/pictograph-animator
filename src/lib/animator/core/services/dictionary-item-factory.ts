@@ -21,7 +21,7 @@ export class DictionaryItemFactory {
 
 			const extractResult = await extractSequenceFromPNG(file);
 			if (!extractResult.success || !extractResult.data) {
-				console.warn(`Failed to extract metadata from ${filePath}`);
+				// Failed to extract metadata from file
 				return null;
 			}
 
@@ -36,8 +36,8 @@ export class DictionaryItemFactory {
 				thumbnailUrl: filePath,
 				versions: sequenceInfo.versions
 			};
-		} catch (error) {
-			console.warn(`Failed to create dictionary item for ${sequenceInfo.name}:`, error);
+		} catch {
+			// Failed to create dictionary item
 			return null;
 		}
 	}

@@ -7,7 +7,7 @@
 		onBeatSelect = () => {}
 	}: {
 		sequenceData?: SequenceData | null;
-		onBeatSelect?: (beatNumber: number) => void;
+		onBeatSelect?: (_beatNumber: number) => void;
 	} = $props();
 
 	// State

@@ -9,8 +9,8 @@
 		disabled = false,
 		value = $bindable('')
 	}: {
-		onSequenceLoaded?: (data: SequenceData) => void;
-		onError?: (error: string) => void;
+		onSequenceLoaded?: (_data: SequenceData) => void;
+		onError?: (_error: string) => void;
 		disabled?: boolean;
 		value?: string;
 	} = $props();

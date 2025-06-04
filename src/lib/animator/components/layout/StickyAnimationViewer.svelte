@@ -25,10 +25,7 @@
 	{isSticky ? 'Exit Sticky View' : 'Sticky View'}
 </button>
 
-<div
-	class="canvas-container"
-	class:sticky={isSticky}
->
+<div class="canvas-container" class:sticky={isSticky}>
 	{#if isSticky}
 		<button
 			type="button"

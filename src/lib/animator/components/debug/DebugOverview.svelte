@@ -1,24 +1,24 @@
 <script lang="ts">
 	import type {
-		BeatDebugInfo,
-		DebugSession,
-		DebugModalState,
-		PropDebugInfo
+		BeatDebugInfo
+		// DebugSession,
+		// DebugModalState,
+		// PropDebugInfo
 	} from '../../types/debug.js';
 
 	// Props
 	let {
 		debugHistory = [],
-		currentSession = null,
-		modalState,
-		onBeatSelect = () => {},
-		onPropSelect = () => {}
+		// currentSession = null, // Not used in this component
+		// modalState, // Not used in this component
+		onBeatSelect = () => {}
+		// onPropSelect = () => {} // Not used in this component
 	}: {
 		debugHistory?: BeatDebugInfo[];
-		currentSession?: DebugSession | null;
-		modalState: DebugModalState;
-		onBeatSelect?: (beatNumber: number) => void;
-		onPropSelect?: (prop: 'blue' | 'red') => void;
+		// currentSession?: DebugSession | null; // Not used in this component
+		// modalState: DebugModalState; // Not used in this component
+		onBeatSelect?: (_beatNumber: number) => void;
+		// onPropSelect?: (_prop: 'blue' | 'red') => void; // Not used in this component
 	} = $props();
 
 	// State
@@ -53,16 +53,18 @@
 			switch (sortBy) {
 				case 'beat':
 					return (a?.beatNumber ?? 0) - (b?.beatNumber ?? 0);
-				case 'issues':
+				case 'issues': {
 					const aIssues = getTotalIssues(a);
 					const bIssues = getTotalIssues(b);
 					return bIssues - aIssues;
-				case 'turns':
+				}
+				case 'turns': {
 					const aTurns =
 						(a?.blueProps?.attributes?.turns ?? 0) + (a?.redProps?.attributes?.turns ?? 0);
 					const bTurns =
 						(b?.blueProps?.attributes?.turns ?? 0) + (b?.redProps?.attributes?.turns ?? 0);
 					return bTurns - aTurns;
+				}
 				default:
 					return 0;
 			}
@@ -174,13 +176,13 @@
 		onBeatSelect(beatNumber);
 	}
 
-	function handlePropClick(prop: 'blue' | 'red'): void {
-		onPropSelect(prop);
-	}
+	// function handlePropClick(prop: 'blue' | 'red'): void {
+	// 	onPropSelect(prop);
+	// }
 
-	function formatAngle(angle: number): string {
-		return `${((angle * 180) / Math.PI).toFixed(1)}°`;
-	}
+	// function formatAngle(angle: number): string {
+	// 	return `${((angle * 180) / Math.PI).toFixed(1)}°`;
+	// }
 
 	function formatTurns(turns: number | undefined): string {
 		return turns !== undefined ? turns.toString() : 'N/A';
@@ -242,7 +244,7 @@
 					<div class="motion-item">
 						<div
 							class="motion-color"
-							style="background-color: {getMotionTypeColor(motionType)}"
+							style:background-color="{getMotionTypeColor(motionType)}"
 						></div>
 						<span class="motion-label">{motionType}</span>
 						<span class="motion-count">{count}</span>
@@ -317,7 +319,7 @@
 								<td class="motion-type">
 									<span
 										class="motion-badge"
-										style="background-color: {getMotionTypeColor(
+										style:background-color="{getMotionTypeColor(
 											beat.blueProps.attributes.motion_type
 										)}"
 									>
@@ -337,7 +339,7 @@
 								<td class="motion-type">
 									<span
 										class="motion-badge"
-										style="background-color: {getMotionTypeColor(
+										style:background-color="{getMotionTypeColor(
 											beat.redProps.attributes.motion_type
 										)}"
 									>

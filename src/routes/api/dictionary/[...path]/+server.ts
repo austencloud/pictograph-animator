@@ -12,7 +12,7 @@ export const GET: RequestHandler = async ({ params }) => {
 
 		// Construct the file path
 		const filePath = join(process.cwd(), 'src', 'lib', 'animator', 'dictionary', path);
-		
+
 		// Security check - ensure the path is within the dictionary directory
 		if (!filePath.includes('dictionary')) {
 			throw error(403, 'Access denied');
@@ -20,7 +20,7 @@ export const GET: RequestHandler = async ({ params }) => {
 
 		// Read the file
 		const fileBuffer = await readFile(filePath);
-		
+
 		// Determine content type based on file extension
 		const contentType = path.endsWith('.png') ? 'image/png' : 'application/octet-stream';
 
@@ -30,8 +30,8 @@ export const GET: RequestHandler = async ({ params }) => {
 				'Cache-Control': 'public, max-age=3600' // Cache for 1 hour
 			}
 		});
-	} catch (err) {
-		console.error('Error serving dictionary file:', err);
+	} catch {
+		// Error serving dictionary file
 		throw error(404, 'File not found');
 	}
 };

@@ -1,15 +1,15 @@
 <script lang="ts">
-	import type { BeatDebugInfo, DebugSession, DebugModalState } from '../../types/debug.js';
+	import type { BeatDebugInfo /* DebugSession, DebugModalState */ } from '../../types/debug.js';
 
 	// Props
 	let {
-		debugHistory = [],
-		currentSession = null,
-		modalState
+		debugHistory = []
+		// currentSession = null, // Not used in this component
+		// modalState // Not used in this component
 	}: {
 		debugHistory?: BeatDebugInfo[];
-		currentSession?: DebugSession | null;
-		modalState: DebugModalState;
+		// currentSession?: DebugSession | null; // Not used in this component
+		// modalState: DebugModalState; // Not used in this component
 	} = $props();
 
 	// State
@@ -19,7 +19,7 @@
 	let showDetails = $state(true);
 
 	// Computed values
-	let validationIssues = $derived(() => {
+	let validationIssues = $derived.by(() => {
 		const issues: Array<{
 			id: string;
 			beatNumber: number;
@@ -99,7 +99,7 @@
 		return issues;
 	});
 
-	let filteredIssues = $derived(() => {
+	let filteredIssues = $derived.by(() => {
 		// Get the current validation issues array from the derived value
 		const issues = validationIssues;
 		let filtered = [...issues];
@@ -130,7 +130,7 @@
 		return filtered;
 	});
 
-	let validationSummary = $derived(() => {
+	let validationSummary = $derived.by(() => {
 		// Get the current validation issues array from the derived value
 		const issues = validationIssues;
 
@@ -177,7 +177,7 @@
 		return prop === 'blue' ? '#3b82f6' : '#ef4444';
 	}
 
-	function formatValidationDetail(key: string, value: any): string {
+	function formatValidationDetail(_key: string, value: any): string {
 		if (typeof value === 'number') {
 			return value.toFixed(3);
 		}
@@ -219,12 +219,12 @@
 			<h4>Issues by Prop</h4>
 			<div class="prop-chart">
 				<div class="prop-item">
-					<div class="prop-color" style="background-color: {getPropColor('blue')}"></div>
+					<div class="prop-color" style:background-color="{getPropColor('blue')}"></div>
 					<span class="prop-label">Blue Prop</span>
 					<span class="prop-count">{validationSummary.propBreakdown.blue}</span>
 				</div>
 				<div class="prop-item">
-					<div class="prop-color" style="background-color: {getPropColor('red')}"></div>
+					<div class="prop-color" style:background-color="{getPropColor('red')}"></div>
 					<span class="prop-label">Red Prop</span>
 					<span class="prop-count">{validationSummary.propBreakdown.red}</span>
 				</div>
@@ -278,7 +278,7 @@
 							<div class="issue-info">
 								<span class="issue-icon">{getIssueIcon(issue.type)}</span>
 								<span class="issue-beat">Beat {issue.beatNumber}</span>
-								<span class="issue-prop" style="color: {getPropColor(issue.prop)}">
+								<span class="issue-prop" style:color="{getPropColor(issue.prop)}">
 									{issue.prop.toUpperCase()}
 								</span>
 								<span class="issue-category">{issue.category}</span>

@@ -8,7 +8,7 @@
 	let {
 		onSequenceLoaded
 	}: {
-		onSequenceLoaded?: (data: SequenceData) => void;
+		onSequenceLoaded?: (_data: SequenceData) => void;
 	} = $props();
 
 	// State

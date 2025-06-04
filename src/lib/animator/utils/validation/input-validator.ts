@@ -2,7 +2,7 @@
  * Input validation utilities for the animator
  */
 
-import type { SequenceData, SequenceStep, PropAttributes } from '../../types/core.js';
+import type { /* SequenceData, */ SequenceStep, PropAttributes } from '../../types/core.js';
 import { validateManualRotation } from '../manual-rotation.js';
 
 export interface ValidationResult {

@@ -16,7 +16,7 @@
 		if (!sequenceData) return;
 
 		isAnalyzing = true;
-		
+
 		try {
 			const metadata = sequenceData[0] || {};
 			const startPosition = sequenceData[1] || {};
@@ -79,10 +79,16 @@
 			}
 
 			// Check for undefined turns
-			if (step.blue_attributes?.turns === undefined && step.blue_attributes?.motion_type !== 'static') {
+			if (
+				step.blue_attributes?.turns === undefined &&
+				step.blue_attributes?.motion_type !== 'static'
+			) {
 				warnings.push(`Step ${index + 1}: Blue prop turns undefined`);
 			}
-			if (step.red_attributes?.turns === undefined && step.red_attributes?.motion_type !== 'static') {
+			if (
+				step.red_attributes?.turns === undefined &&
+				step.red_attributes?.motion_type !== 'static'
+			) {
 				warnings.push(`Step ${index + 1}: Red prop turns undefined`);
 			}
 
@@ -131,18 +137,12 @@
 	<div class="analyzer-header">
 		<h3>🔍 Sequence Analysis</h3>
 		<div class="analyzer-actions">
-			<button 
-				class="analyze-btn" 
-				onclick={analyzeSequence}
-				disabled={!sequenceData || isAnalyzing}
-			>
+			<button class="analyze-btn" onclick={analyzeSequence} disabled={!sequenceData || isAnalyzing}>
 				{isAnalyzing ? '⏳ Analyzing...' : '🔍 Analyze'}
 			</button>
-			
+
 			{#if analysisResults}
-				<button class="export-btn" onclick={exportAnalysis}>
-					💾 Export
-				</button>
+				<button class="export-btn" onclick={exportAnalysis}> 💾 Export </button>
 			{/if}
 		</div>
 	</div>
@@ -179,7 +179,8 @@
 					<h4>✅ Validation Results</h4>
 					<div class="validation-summary">
 						<div class="validation-item {analysisResults.validation.isValid ? 'valid' : 'invalid'}">
-							<span class="validation-icon">{analysisResults.validation.isValid ? '✅' : '❌'}</span>
+							<span class="validation-icon">{analysisResults.validation.isValid ? '✅' : '❌'}</span
+							>
 							<span class="validation-text">
 								{analysisResults.validation.isValid ? 'Sequence Valid' : 'Issues Found'}
 							</span>
@@ -280,7 +281,8 @@
 		gap: 0.5rem;
 	}
 
-	.analyze-btn, .export-btn {
+	.analyze-btn,
+	.export-btn {
 		background: var(--color-primary);
 		color: white;
 		border: none;
@@ -292,7 +294,8 @@
 		transition: all 0.2s ease;
 	}
 
-	.analyze-btn:hover:not(:disabled), .export-btn:hover {
+	.analyze-btn:hover:not(:disabled),
+	.export-btn:hover {
 		background: var(--color-primary-hover);
 		transform: translateY(-1px);
 	}
@@ -317,14 +320,18 @@
 		gap: 1.5rem;
 	}
 
-	.metadata-section, .validation-section, .steps-section {
+	.metadata-section,
+	.validation-section,
+	.steps-section {
 		background: var(--color-surface);
 		border-radius: 6px;
 		padding: 1rem;
 		border: 1px solid var(--color-border);
 	}
 
-	.metadata-section h4, .validation-section h4, .steps-section h4 {
+	.metadata-section h4,
+	.validation-section h4,
+	.steps-section h4 {
 		margin: 0 0 1rem 0;
 		color: var(--color-text);
 		font-size: 1rem;
@@ -509,7 +516,9 @@
 		font-size: 0.75rem;
 	}
 
-	.locations, .orientations, .turns {
+	.locations,
+	.orientations,
+	.turns {
 		color: var(--color-text-secondary);
 		font-size: 0.75rem;
 		font-family: monospace;
@@ -545,7 +554,8 @@
 			grid-template-columns: 1fr;
 		}
 
-		.table-header, .table-row {
+		.table-header,
+		.table-row {
 			grid-template-columns: 1fr;
 			gap: 0.5rem;
 		}

@@ -34,9 +34,9 @@ export class DictionarySearcher {
 			}
 			if (category.includes('steps')) {
 				const stepCount = item.sequenceData.length - 1;
-				if (category.includes('≤5')) return stepCount <= 5;
-				if (category.includes('6-10')) return stepCount >= 6 && stepCount <= 10;
-				if (category.includes('>10')) return stepCount > 10;
+				if (category.includes('≤5')) {return stepCount <= 5;}
+				if (category.includes('6-10')) {return stepCount >= 6 && stepCount <= 10;}
+				if (category.includes('>10')) {return stepCount > 10;}
 			}
 			return item.metadata.prop_type === category || item.metadata.grid_mode === category;
 		});

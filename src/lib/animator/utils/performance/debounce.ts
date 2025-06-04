@@ -2,15 +2,15 @@
  * Performance utilities for debouncing and throttling operations
  */
 
-export type DebounceFunction<T extends (...args: any[]) => any> = (
-	...args: Parameters<T>
+export type DebounceFunction<T extends (..._args: any[]) => any> = (
+	..._args: Parameters<T>
 ) => void;
 
 /**
  * Creates a debounced version of a function that delays execution until after
  * the specified delay has passed since the last time it was invoked.
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (..._args: any[]) => any>(
 	func: T,
 	delay: number
 ): DebounceFunction<T> {
@@ -32,7 +32,7 @@ export function debounce<T extends (...args: any[]) => any>(
  * Creates a throttled version of a function that only executes at most once
  * per specified interval.
  */
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (..._args: any[]) => any>(
 	func: T,
 	interval: number
 ): DebounceFunction<T> {
@@ -63,7 +63,7 @@ export function throttle<T extends (...args: any[]) => any>(
 /**
  * Creates a function that executes immediately on first call, then debounces subsequent calls
  */
-export function immediateDebounce<T extends (...args: any[]) => any>(
+export function immediateDebounce<T extends (..._args: any[]) => any>(
 	func: T,
 	delay: number
 ): DebounceFunction<T> {
@@ -91,9 +91,7 @@ export function immediateDebounce<T extends (...args: any[]) => any>(
 /**
  * Request animation frame based throttling for smooth animations
  */
-export function rafThrottle<T extends (...args: any[]) => any>(
-	func: T
-): DebounceFunction<T> {
+export function rafThrottle<T extends (..._args: any[]) => any>(func: T): DebounceFunction<T> {
 	let rafId: number | null = null;
 
 	return (...args: Parameters<T>) => {

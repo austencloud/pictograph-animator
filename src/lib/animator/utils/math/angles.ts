@@ -3,7 +3,7 @@
  */
 
 import type { Orientation } from '../../types/core.js';
-import { locationAngles, PI, TWO_PI } from './constants.js';
+import { /* locationAngles, */ PI, TWO_PI } from './constants.js';
 import { mapPositionToAngle as diamondMapPositionToAngle } from './diamond-grid.js';
 
 export function normalizeAnglePositive(angle: number): number {

@@ -6,7 +6,7 @@
 		disabled = false
 	}: {
 		selectedStepFilter?: string;
-		onStepFilterChange?: (filterId: string) => void;
+		onStepFilterChange?: (_filterId: string) => void;
 		disabled?: boolean;
 	} = $props();
 
