@@ -8,8 +8,11 @@ import {
 	calculateProIsolationStaffAngle,
 	calculateAntispinTargetAngle,
 	calculateStaticStaffAngle,
-	calculateDashTargetAngle
+	calculateDashTargetAngle,
+	calculateFloatStaffAngle
 } from '../../utils/math/prop-calculations.js';
+import { calculateManualStaffRotation } from '../../utils/manual-rotation.js';
+import { getOrientationAngleRadians } from '../../utils/orientation-mapping.js';
 import { ANIMATION_CONSTANTS } from '../../constants/animation.js';
 
 /**
@@ -82,9 +85,8 @@ export class AnimationEngine {
 			return;
 		}
 
-		// Allow beat to go beyond totalBeats for final step completion
-		// Constrain to reasonable range (0 to totalBeats+1)
-		const constrainedBeat = Math.max(0, Math.min(beat, this.totalBeats + 1));
+		// Constrain beat to valid range (allow up to totalBeats to show final frame)
+		const constrainedBeat = Math.max(0, Math.min(beat, this.totalBeats));
 
 		// Get start position (index 1 in sequence data)
 		const startPosition = this.sequenceData[1] as SequenceStep;
@@ -106,8 +108,26 @@ export class AnimationEngine {
 			return;
 		}
 
-		// For beats 1 to totalBeats, show animation steps
-		// Beat 1.0 = start of first step, Beat 2.0 = start of second step, etc.
+		// Handle final beat (when beat equals totalBeats)
+		if (constrainedBeat === this.totalBeats) {
+			// Show the final step at t=1.0 (completed state)
+			const finalStep = this.steps[this.steps.length - 1];
+			this.calculatePropState(
+				this.bluePropState,
+				finalStep.blue_attributes,
+				finalStep.blue_attributes,
+				1.0
+			);
+			this.calculatePropState(
+				this.redPropState,
+				finalStep.red_attributes,
+				finalStep.red_attributes,
+				1.0
+			);
+			return;
+		}
+
+		// Find the current step based on beat number (1-based for animation steps)
 		const stepIndex = Math.floor(constrainedBeat - 1);
 		const nextStepIndex = stepIndex + 1;
 
@@ -170,6 +190,16 @@ export class AnimationEngine {
 		return { ...this.redPropState };
 	}
 
+	/**
+	 * Get both prop states in a single object
+	 */
+	getPropStates(): { blueProp: PropState; redProp: PropState } {
+		return {
+			blueProp: { ...this.bluePropState },
+			redProp: { ...this.redPropState }
+		};
+	}
+
 	getTotalBeats(): number {
 		return this.totalBeats;
 	}
@@ -227,6 +257,34 @@ export class AnimationEngine {
 		_nextAttrs: PropAttributes,
 		t: number
 	): number {
+		// Check for manual rotation override first (highest priority)
+		const manualRotation = calculateManualStaffRotation(currentAttrs, t);
+		if (manualRotation !== null) {
+			return manualRotation;
+		}
+
+		// Use orientation mappings if both start and end orientations are available
+		if (currentAttrs.start_ori && currentAttrs.end_ori) {
+			try {
+				const startAngle = getOrientationAngleRadians(
+					currentAttrs.start_loc,
+					currentAttrs.start_ori
+				);
+				const endAngle = getOrientationAngleRadians(currentAttrs.end_loc, currentAttrs.end_ori);
+
+				// Interpolate between start and end angles using shortest path
+				const angleDiff = endAngle - startAngle;
+				const normalizedDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
+
+				return startAngle + normalizedDiff * t;
+			} catch (error) {
+				console.warn(
+					`Failed to get orientation mapping for ${currentAttrs.start_loc}(${currentAttrs.start_ori}) → ${currentAttrs.end_loc}(${currentAttrs.end_ori}), falling back to dynamic calculation`
+				);
+			}
+		}
+
+		// Fall back to dynamic calculations based on motion type
 		switch (currentAttrs.motion_type) {
 			case 'pro':
 				return calculateProIsolationStaffAngle(
@@ -257,6 +315,9 @@ export class AnimationEngine {
 					currentAttrs.end_ori,
 					t
 				);
+
+			case 'fl':
+				return calculateFloatStaffAngle(currentAttrs.start_ori, currentAttrs.end_ori, t);
 
 			default:
 				return 0;

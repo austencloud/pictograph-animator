@@ -5,15 +5,7 @@
 
 import type { PropRotDir } from '../../types/core.js';
 import { PI, TWO_PI } from './constants.js';
-import { normalizeAnglePositive } from './angles.js';
-import {
-	getDegreesForTurns,
-	getRotationMultiplier,
-	getOrientationAngle,
-	degreesToRadians,
-	normalizeAngle,
-	calculateProFloatRotation
-} from '../../config/sequence-interpretation.js';
+import { normalizeAnglePositive, mapOrientationToAngle } from './angles.js';
 
 export function calculateProIsolationStaffAngle(
 	startOri: string | undefined,
@@ -36,17 +28,23 @@ export function calculateProIsolationStaffAngle(
 	}
 
 	// Calculate total rotation for non-zero turns
+	// Special case for pro motion with 0 turns: perform 90-degree isolation
+	if (numTurns === 0) {
+		// For isolation with 0 turns, add 90 degrees (π/2) in the specified direction
+		const isolationRotation = propRotDir === 'ccw' ? -PI / 2 : PI / 2;
+		return normalizeAnglePositive(startAngle + isolationRotation * t);
+	}
+
+	// For non-zero turns, use orientation-based interpolation
 	let totalRotation = endAngle - startAngle;
 
-	// Add the turn rotation
-	const turnRotation = degreesToRadians(getDegreesForTurns(numTurns));
-	const directionMultiplier = getRotationMultiplier(propRotDir);
-
-	totalRotation += turnRotation * directionMultiplier;
-
-	// Ensure we take the shortest path for orientation change
-	if (totalRotation > PI) totalRotation -= TWO_PI;
-	if (totalRotation < -PI) totalRotation += TWO_PI;
+	if (propRotDir === 'cw') {
+		totalRotation += numTurns * TWO_PI;
+		if (totalRotation < 0) totalRotation += TWO_PI;
+	} else if (propRotDir === 'ccw') {
+		totalRotation -= numTurns * TWO_PI;
+		if (totalRotation > 0) totalRotation -= TWO_PI;
+	}
 
 	return normalizeAngle(startAngle + totalRotation * t);
 }
@@ -59,24 +57,26 @@ export function calculateAntispinTargetAngle(
 	turns: number | undefined,
 	t: number
 ): number {
-	const startAngle = getOrientationAngle(startOri);
-	const endAngle = getOrientationAngle(endOri);
+	const startAngle = mapOrientationToAngle(
+		(startOri as 'in' | 'out' | 'n' | 'e' | 's' | 'w') || 'in'
+	);
 	const numTurns = turns ?? 0;
 
-	// Calculate orientation change
-	let totalRotation = endAngle - startAngle;
+	// For antispin, we need to calculate based on hand movement direction
+	// The prop rotates opposite to the hand's movement around the center
 
-	// Add turn rotation
-	const turnRotation = degreesToRadians(getDegreesForTurns(numTurns));
-	const directionMultiplier = getRotationMultiplier(propRotDir);
+	// Calculate the base antispin rotation (opposite to hand movement)
+	// For 0 turns, this should be exactly 90 degrees (π/2) opposite to prop_rot_dir
+	let baseRotation: number;
 
-	totalRotation += turnRotation * directionMultiplier;
+	if (propRotDir === 'cw') {
+		totalRotation += numTurns * TWO_PI;
+	} else if (propRotDir === 'ccw') {
+		totalRotation -= numTurns * TWO_PI;
+	}
 
-	// Calculate current staff angle
 	const staffAngle = startAngle + totalRotation * t;
-
-	// For antispin, subtract the center path angle to maintain orientation relative to grid
-	return normalizeAngle(staffAngle - centerPathAngle);
+	return normalizeAnglePositive(staffAngle - centerPathAngle);
 }
 
 export function calculateStaticStaffAngle(
@@ -99,12 +99,54 @@ export function calculateDashTargetAngle(
 
 	// Calculate the shortest path between orientations
 	let angleDiff = endAngle - startAngle;
-	if (angleDiff > PI) angleDiff -= TWO_PI;
-	if (angleDiff < -PI) angleDiff += TWO_PI;
+	if (angleDiff > PI) {
+		angleDiff -= TWO_PI;
+	}
+	if (angleDiff < -PI) {
+		angleDiff += TWO_PI;
+	}
 
 	// Interpolate between start and end orientations
 	const staffAngle = startAngle + angleDiff * t;
 
 	// Adjust for center path rotation to maintain orientation relative to grid
 	return normalizeAngle(staffAngle - centerPathAngle);
+}
+
+export function calculateFloatStaffAngle(
+	startOri: string | undefined,
+	endOri: string | undefined,
+	t: number
+): number {
+	const startAngle = mapOrientationToAngle(
+		(startOri as 'in' | 'out' | 'n' | 'e' | 's' | 'w') || 'in'
+	);
+	const endAngle = mapOrientationToAngle((endOri as 'in' | 'out' | 'n' | 'e' | 's' | 'w') || 'in');
+
+	let angleDiff = endAngle - startAngle;
+	if (angleDiff > PI) angleDiff -= TWO_PI;
+	if (angleDiff < -PI) angleDiff += TWO_PI;
+
+	const staffAngle = startAngle + angleDiff * t;
+
+	// Adjust for center path rotation to maintain orientation relative to grid
+	return normalizeAngle(staffAngle - centerPathAngle);
+}
+
+export function calculateFloatStaffAngle(
+	startOri: string | undefined,
+	endOri: string | undefined,
+	t: number
+): number {
+	const startAngle = mapOrientationToAngle(
+		(startOri as 'in' | 'out' | 'n' | 'e' | 's' | 'w') || 'in'
+	);
+	const endAngle = mapOrientationToAngle((endOri as 'in' | 'out' | 'n' | 'e' | 's' | 'w') || 'in');
+
+	// Simple interpolation between start and end orientations (no additional rotation)
+	let angleDiff = endAngle - startAngle;
+	if (angleDiff > PI) angleDiff -= TWO_PI;
+	if (angleDiff < -PI) angleDiff += TWO_PI;
+
+	return normalizeAnglePositive(startAngle + angleDiff * t);
 }

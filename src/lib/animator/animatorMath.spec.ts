@@ -13,7 +13,8 @@ import {
 	calculateProIsolationStaffAngle,
 	calculateAntispinTargetAngle,
 	calculateStaticStaffAngle,
-	calculateDashTargetAngle
+	calculateDashTargetAngle,
+	calculateFloatStaffAngle
 } from './utils/math/index.js';
 
 describe('animatorMath', () => {
@@ -69,17 +70,37 @@ describe('animatorMath', () => {
 	});
 
 	it('calculateProIsolationStaffAngle returns correct angle', () => {
-		// Test interpolation from 'in' (PI) to 'out' (0) at t=0.5
-		// The function interpolates and normalizes, so we expect 3*PI/2 for clockwise from PI to 0
-		expect(calculateProIsolationStaffAngle('in', 'out', 'cw', 0, 0.5)).toBeCloseTo(3 * HALF_PI);
-		expect(calculateProIsolationStaffAngle('out', 'in', 'ccw', 0, 0.5)).toBeCloseTo(3 * HALF_PI);
+		// Test pro motion with 0 turns: should perform 90-degree isolation
+		// Starting from 'in' (PI), clockwise 90 degrees at t=0.5 should be PI + (PI/2 * 0.5) = PI + PI/4
+		expect(calculateProIsolationStaffAngle('in', 'out', 'cw', 0, 0.5)).toBeCloseTo(
+			PI + HALF_PI * 0.5
+		);
+		// Starting from 'in' (PI), counter-clockwise 90 degrees at t=0.5 should be PI + (-PI/2 * 0.5) = PI - PI/4
+		expect(calculateProIsolationStaffAngle('in', 'out', 'ccw', 0, 0.5)).toBeCloseTo(
+			PI - HALF_PI * 0.5
+		);
+
+		// Test pro motion with non-zero turns: should use orientation interpolation
+		// From 'in' (PI) to 'out' (0) with 1 turn clockwise at t=0.5
+		expect(calculateProIsolationStaffAngle('in', 'out', 'cw', 1, 0.5)).toBeCloseTo(3 * HALF_PI);
 	});
 
 	it('calculateAntispinTargetAngle returns correct angle', () => {
-		// Test antispin calculation with center path angle 0
-		// The function returns 3*PI/2 for this interpolation case
-		expect(calculateAntispinTargetAngle(0, 'in', 'out', 'cw', 0, 0.5)).toBeCloseTo(3 * HALF_PI);
-		expect(calculateAntispinTargetAngle(0, 'in', 'out', 'cw', 1, 0.5)).toBeCloseTo(3 * HALF_PI);
+		// Test antispin with 0 turns: should perform 90-degree rotation opposite to prop_rot_dir
+		// Starting from 'in' (PI), clockwise prop_rot_dir means -90 degrees at t=0.5 should be PI + (-PI/2 * 0.5) = PI - PI/4
+		expect(calculateAntispinTargetAngle(0, 'in', 'out', 'cw', 0, 0.5)).toBeCloseTo(
+			PI - HALF_PI * 0.5
+		);
+		// Starting from 'in' (PI), counter-clockwise prop_rot_dir means +90 degrees at t=0.5 should be PI + (PI/2 * 0.5) = PI + PI/4
+		expect(calculateAntispinTargetAngle(0, 'in', 'out', 'ccw', 0, 0.5)).toBeCloseTo(
+			PI + HALF_PI * 0.5
+		);
+
+		// Test antispin with non-zero turns: should use orientation interpolation with additional turns
+		// From 'in' (PI) to 'out' (0), orientation change = -PI (shortest path)
+		// Antispin: opposite rotation = +PI, plus 1 turn clockwise = +PI
+		// Total: PI + PI + PI = 3*PI, normalized to PI
+		expect(calculateAntispinTargetAngle(0, 'in', 'out', 'cw', 1, 1.0)).toBeCloseTo(PI);
 	});
 
 	it('calculateStaticStaffAngle returns correct angle', () => {
@@ -89,5 +110,18 @@ describe('animatorMath', () => {
 
 	it('calculateDashTargetAngle returns correct angle', () => {
 		expect(calculateDashTargetAngle(0, 'in', 'out', 0.5)).toBeCloseTo(HALF_PI);
+	});
+
+	it('calculateFloatStaffAngle returns correct angle', () => {
+		// Test float motion: simple interpolation between orientations
+		// From 'in' (PI) to 'out' (0) at t=0.5 should be PI/2 (taking shorter path)
+		expect(calculateFloatStaffAngle('in', 'out', 0.5)).toBeCloseTo(HALF_PI);
+		// From 'out' (0) to 'in' (PI) at t=0.5 should be PI/2
+		expect(calculateFloatStaffAngle('out', 'in', 0.5)).toBeCloseTo(HALF_PI);
+		// Same orientation should return the same angle
+		expect(calculateFloatStaffAngle('in', 'in', 0.5)).toBeCloseTo(PI);
+		// Test at t=0 and t=1
+		expect(calculateFloatStaffAngle('in', 'out', 0)).toBeCloseTo(PI);
+		expect(calculateFloatStaffAngle('in', 'out', 1)).toBeCloseTo(0);
 	});
 });

@@ -3,6 +3,7 @@
  */
 
 import type { SequenceData, SequenceStep, PropAttributes } from '../../types/core.js';
+import { validateManualRotation } from '../manual-rotation.js';
 
 export interface ValidationResult {
 	isValid: boolean;
@@ -190,7 +191,7 @@ export class InputValidator {
 		}
 
 		// Validate motion type
-		const validMotionTypes = ['static', 'pro', 'anti', 'dash'];
+		const validMotionTypes = ['static', 'pro', 'anti', 'dash', 'fl'];
 		if (attrs.motion_type && !validMotionTypes.includes(attrs.motion_type)) {
 			errors.push(`${context}: Invalid motion_type '${attrs.motion_type}'`);
 		}
@@ -256,6 +257,12 @@ export class InputValidator {
 					`${context}: High number of turns (${attrs.turns}) may be difficult to visualize`
 				);
 			}
+		}
+
+		// Validate manual rotation fields
+		const manualRotationValidation = validateManualRotation(attrs);
+		if (!manualRotationValidation.isValid) {
+			errors.push(...manualRotationValidation.errors.map((error) => `${context}: ${error}`));
 		}
 
 		return {
